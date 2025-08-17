@@ -3,323 +3,205 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Crypto Tracker & Portfolio Simulator</title>
+<title>Wake Up to Play</title>
 <style>
-:root{
-  --bg:#071022; --glass: rgba(255,255,255,0.03);
-  --muted:#9aa4b2; --pos:#7ee787; --neg:#ff8b8b;
-  --glow:#60a5fa;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial;
-}
-*{box-sizing:border-box;}
-body{
-  margin:0; min-height:100vh; display:flex; flex-direction:column; align-items:center;
-  background: linear-gradient(180deg,var(--bg) 0%, #081529 100%);
-  color:#e6eef8; padding:24px; overflow:hidden; position:relative;
-}
-canvas#particleCanvas{ position:absolute; top:0; left:0; width:100%; height:100%; z-index:0; }
-.wrap{ width:100%; max-width:720px; position:relative; z-index:1; margin-top:25px; } /* lowered whole format */
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{height:100%;font-family:Arial,sans-serif;overflow:hidden;background: linear-gradient(to bottom,#74b9ff,#dfe6e9);position: relative;}
+.screen{display:none;width:100%;height:100%;flex-direction:column;align-items:center;justify-content:center;position: relative;z-index:2;}
+.active{display:flex;}
+#snowCanvas{position:absolute;top:0;left:0;width:100%;height:100%;z-index:1;pointer-events:none;}
 
-header{ display:flex; align-items:center; justify-content:flex-end; margin-bottom:12px; width:100%; z-index:1; gap:10px; }
-select, input[type="number"]{
-  background:transparent; color:var(--muted); border:1px solid rgba(255,255,255,0.04);
-  padding:6px 8px; border-radius:8px; font-size:13px; text-align:right;
-}
-input[type="number"]{ width:80px; }
-select:focus, input[type="number"]:focus{ outline:none; box-shadow:0 0 0 3 rgba(96,165,250,0.06);}
-button#toggleParticles{
-  padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.04);
-  background:transparent; color:var(--muted); cursor:pointer;
-}
-button#toggleParticles:hover{ color:var(--glow); border-color:rgba(96,165,250,0.2); }
+#characterWrapper{position: relative; display:flex;flex-direction:column;align-items:center;}
+#character{width:280px;transition:transform 0.3s, filter 0.3s;cursor:pointer;z-index:2;}
+#shadow{position:absolute;top:220px;left:50%;transform:translateX(-50%);width:200px;pointer-events:none;z-index:1;}
+.sleepZ{position:absolute;opacity:0;animation-name:sleepZAnim;animation-timing-function:ease-in-out;animation-iteration-count:infinite;transform-origin:center;}
+.sleepZ img{width:100%;height:100%;}
+.sleepZ:nth-child(2){top:20px; left:70px;width:22px;height:22px;animation-duration:2s;animation-delay:0s;}
+.sleepZ:nth-child(3){top:30px; left:110px;width:26px;height:26px;animation-duration:2.5s;animation-delay:0.5s;}
+.sleepZ:nth-child(4){top:40px; left:90px;width:24px;height:24px;animation-duration:2.2s;animation-delay:1s;}
+@keyframes sleepZAnim{0%{opacity:0;transform:translateY(0);}30%{opacity:1;transform:translateY(-10px);}60%{opacity:0.5;transform:translateY(-20px);}100%{opacity:0;transform:translateY(-30px);}}
+#characterWrapper:hover #character{transform:scale(1.1);filter:brightness(1.2);}
+#characterWrapper:hover .sleepZ{transform:scale(1.3);}
+#characterWrapper.activeTouch #character{transform:scale(1.1);filter:brightness(1.2);}
+#characterWrapper.activeTouch .sleepZ{transform:scale(1.3);}
+#holdToWakeImage{width:100%;max-width:300px;margin-top:5px;z-index:2;}
+#progressContainer{width:70%;height:15px;background:rgba(0,0,0,0.5);border-radius:15px;margin-top:10px;overflow:hidden;z-index:2;position:relative;display:block;}
+#progressBar{height:100%;width:0%;background:limegreen;transition:width 0.1s linear;}
+#progressText{position:absolute;top:-20px;font-weight:bold;color:black;text-align:center;width:100%;}
 
-.token-list-wrapper { display:flex; flex-direction:column; align-items:center; width:100%; gap:10px; }
-.token-list{ list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:10px; width:100%; z-index:1; }
-
-li.token{
-  display:grid; 
-  grid-template-columns: 1fr 120px 120px 60px; 
-  align-items:center; 
-  gap:12px;
-  padding:12px; background:var(--glass); border-radius:10px; border:1px solid rgba(255,255,255,0.02);
-  min-height:60px;
-}
-.left{ display:flex; align-items:center; gap:12px; min-width:0; }
-.icon{ width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; overflow:hidden; flex-shrink:0; }
-.icon img{ width:100%; height:100%; object-fit:cover; display:block; }
-.meta{ line-height:1; min-width:0; overflow:hidden; }
-.meta .name{ font-weight:600; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
-.meta .sym{ font-size:12px; color:var(--muted); margin-top:3px; }
-
-.price, .holdings{ display:flex; flex-direction:column; align-items:flex-end; }
-.price .usd, .holdings input{ text-align:right; width:100%; }
-.price .usd{ font-weight:700; font-size:14px; }
-.price .change{ font-size:12px; margin-top:4px; color:var(--muted); text-align:right; }
-.holdings input{ font-size:13px; }
-.hold-value{ font-size:12px; color:var(--muted); text-align:right; }
-
-button.remove-btn{
-  background:transparent; border:1px solid rgba(255,255,255,0.05); padding:0; width:30px; height:30px; border-radius:6px; color:var(--muted); cursor:pointer; font-weight:bold;
-}
-
-.portfolio-total{ 
-  margin-top:20px; 
-  text-align:center; 
-  font-size:36px; /* doubled from 18px */ 
-  font-weight:bold; 
-  color:white; 
-}
-
-.logo-header { margin-top:0px; margin-bottom:20px; }
-.logo-footer { margin-top:35px; margin-bottom: -25px; } /* 20px original + 15px extra spacing */
-.logo-header img, .logo-footer img { width:200px; height:auto; display:block; margin:0 auto; }
-
-.search-bar {
-  display:flex; gap:6px; margin-bottom:12px; width:100%;
-  position:relative;
-}
-#coinSearch{
-  flex:1; padding:6px 8px; border-radius:8px; border:none; background:rgba(255,255,255,0.05); color:white;
-}
-#addCoinBtn{
-  padding:6px 12px; border-radius:8px; border:1px solid rgba(255,255,255,0.05); background:transparent; color:var(--muted); cursor:pointer;
-}
-#addCoinBtn:disabled{ color:rgba(154,164,178,0.4); cursor:not-allowed; }
-.autocomplete-suggestions{
-  position:absolute; background:#0a1b3d; border:none; max-height:150px; overflow-y:auto; width:100%;
-  z-index:2; margin-top:2px; border-radius:6px;
-}
-.autocomplete-suggestions div{
-  display:flex; align-items:center; gap:6px; padding:6px 8px; cursor:pointer;
-}
-.autocomplete-suggestions div img{ width:20px; height:20px; border-radius:4px; }
-.autocomplete-suggestions div:hover{ background:rgba(96,165,250,0.2);}
-
-.token-pagination button{
-  background:transparent; border:1px solid rgba(255,255,255,0.1);
-  color:var(--muted); font-size:18px; padding:6px 12px; border-radius:6px; cursor:pointer;
-}
-.token-pagination button:hover{ color:var(--glow); border-color:rgba(96,165,250,0.2);}
+#gameScreen{background: rgba(0,0,0,0.5);padding:20px;border-radius:15px;display:flex;flex-direction:column;align-items:center;}
+#gameScreen img#gameTitle{max-width:300px;}
+.grid{display:grid;grid-template-columns:repeat(4,60px);grid-gap:10px;margin-top:25px;}
+.cell{width:60px;height:60px;background:black;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.3s;}
+.cell img{width:100%;height:100%;border-radius:10px;transition:0.3s;}
+.glow-gold{box-shadow:0 0 15px 5px gold;}
+.glow-green{box-shadow:0 0 15px 5px limegreen;}
+.glow-red{box-shadow:0 0 15px 5px red;}
+#message{margin-top:15px;font-weight:bold;font-size:1.2rem;text-align:center;}
+.ticker{animation:blink 1s infinite;}
+.ticker-green{animation:blink 1s infinite;color:limegreen;font-weight:bold;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 5px limegreen,0 0 10px limegreen;}
+.ticker-gold{animation:blink 1s infinite;color:gold;font-weight:bold;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 5px gold,0 0 10px gold;}
+.ticker-red{animation:blink 1s infinite;color:red;font-weight:bold;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 5px red,0 0 10px red;}
+@keyframes blink{0%,50%,100%{opacity:1;}25%,75%{opacity:0;}}
+#restartBtn{margin-top:15px;padding:10px 20px;background:#fff;color:#000;border:none;border-radius:10px;cursor:pointer;font-weight:bold;display:none;transition:0.3s;}
+.restart-green{background:limegreen;color:#000;}
+.restart-gold{background:gold;color:#000;}
+.restart-red{background:red;color:#fff;}
+#logo{margin-top:20px;max-width:300px;} /* 2x larger */
 </style>
 </head>
 <body>
-<canvas id="particleCanvas"></canvas>
 
-<div class="logo-header">
-  <img src="https://i.postimg.cc/mrKmKrqZ/only23.png" alt="Top Logo">
+<canvas id="snowCanvas"></canvas>
+
+<div id="wakeScreen" class="screen active">
+  <div id="characterWrapper">
+    <img id="character" src="https://i.imgur.com/HuFf7Xl.png" alt="Sleep Character">
+    <img id="shadow" src="https://i.imgur.com/7KZepuH.png" alt="Shadow">
+    <div class="sleepZ"><img src="https://i.postimg.cc/KjWS27ZM/z.png"></div>
+    <div class="sleepZ"><img src="https://i.postimg.cc/KjWS27ZM/z.png"></div>
+    <div class="sleepZ"><img src="https://i.postimg.cc/KjWS27ZM/z.png"></div>
+    <img id="holdToWakeImage" src="https://i.imgur.com/MLFNhoY.png" alt="Hold to Wake Up">
+    <div id="progressContainer"><div id="progressBar"></div><div id="progressText">0%</div></div>
+  </div>
 </div>
 
-<div class="wrap">
-  <header>
-    <select id="changeSelect">
-      <option value="24h" selected>24h</option>
-      <option value="1h">1h</option>
-    </select>
-    <button id="toggleParticles">Particles On</button>
-    <span id="lastUpdated" class="status">—</span>
-  </header>
-
-  <div class="search-bar">
-    <input type="text" id="coinSearch" placeholder="Search crypto coins...">
-    <button id="addCoinBtn" disabled>Add</button>
-    <div class="autocomplete-suggestions" id="autocomplete"></div>
-  </div>
-
-  <div class="token-list-wrapper">
-    <ul class="token-list" id="tokens"></ul>
-    <div class="token-pagination" style="margin-top:10px;">
-      <button id="prevPage" style="display:none;">&lt;</button>
-      <button id="nextPage">&gt;</button>
-    </div>
-  </div>
-
-  <div class="portfolio-total" id="portfolioTotal">Portfolio: $0.00</div>
-</div>
-
-<div class="logo-footer">
-  <a href="https://x.com/BeforeSatoshi" target="_blank">
-    <img src="https://i.postimg.cc/9fVnZwBq/before2.png" alt="Bottom Logo">
-  </a>
+<div id="gameScreen" class="screen">
+  <img id="gameTitle" src="https://i.postimg.cc/fLws0X9J/billieraid.png" alt="Game Title">
+  <div class="grid" id="gameGrid"></div>
+  <div id="message"></div>
+  <button id="restartBtn">Restart</button>
+  <img id="logo" src="https://i.postimg.cc/Jhbq2Yzd/power2f.png" alt="Logo">
 </div>
 
 <script>
-document.addEventListener('DOMContentLoaded', async () => {
-  const canvas=document.getElementById('particleCanvas');
-  const ctx=canvas.getContext('2d'); let particles=[]; const PARTICLE_COUNT=window.innerWidth<600?10:15;
-  const img=new Image(); img.src='https://i.postimg.cc/sgpV3SXB/bags-spand.png'; let animationId;
-  function resizeCanvas(){canvas.width=window.innerWidth; canvas.height=window.innerHeight;}
-  window.addEventListener('resize',resizeCanvas); resizeCanvas();
-  function initParticles(){particles=[]; for(let i=0;i<PARTICLE_COUNT;i++){particles.push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,vx:(Math.random()-0.5)*0.15,vy:(Math.random()-0.5)*0.15,size:20+Math.random()*15});}}
-  function animate(){ctx.clearRect(0,0,canvas.width,canvas.height); particles.forEach(p=>{p.x+=p.vx;p.y+=p.vy;if(p.x>canvas.width)p.x=0;if(p.x<0)p.x=canvas.width;if(p.y>canvas.height)p.y=0;if(p.y<0)p.y=canvas.height;ctx.globalAlpha=0.5+Math.random()*0.2;ctx.drawImage(img,p.x,p.y,p.size,p.size);ctx.globalAlpha=1;});animationId=requestAnimationFrame(animate);}
-  img.onload=()=>{initParticles();animate();}
-  const toggleBtn=document.getElementById('toggleParticles'); let particlesActive=true;
-  toggleBtn.addEventListener('click',()=>{particlesActive=!particlesActive;if(particlesActive){toggleBtn.textContent='Particles On'; canvas.style.display='block'; animate();}else{toggleBtn.textContent='Particles Off'; canvas.style.display='none'; cancelAnimationFrame(animationId);}});
+// --- Snow ---
+const canvas=document.getElementById('snowCanvas');
+const ctx=canvas.getContext('2d');
+let width,height,snowflakes=[],sparkles=[];
+function resizeCanvas(){width=canvas.width=window.innerWidth;height=canvas.height=window.innerHeight;}
+function createSnowflakes(){snowflakes=[];for(let i=0;i<150;i++){snowflakes.push({x:Math.random()*width,y:Math.random()*height,r:Math.random()*4+1,d:Math.random()*0.5+0.5});}}
+function createSparkles(){sparkles=[];for(let i=0;i<50;i++){sparkles.push({x:Math.random()*width,y:height+Math.random()*height,r:Math.random()*2+1,alpha:Math.random()*0.5+0.5,speedY:Math.random()*0.5+0.2,speedX:(Math.random()-0.5)*0.3});}}
+function drawSnowflakes(){ctx.clearRect(0,0,width,height);ctx.fillStyle='white';ctx.beginPath();for(const f of snowflakes){ctx.moveTo(f.x,f.y);ctx.arc(f.x,f.y,f.r,0,Math.PI*2,true);}ctx.fill();moveSnowflakes();}
+function moveSnowflakes(){let angle=0;angle+=0.001;for(const f of snowflakes){f.y+=Math.pow(f.d,2)+1;f.x+=Math.sin(angle)*2;if(f.y>height){f.y=0;f.x=Math.random()*width;}}}
+function drawSparkles(){for(const s of sparkles){ctx.beginPath();ctx.fillStyle=`rgba(255,255,255,${s.alpha})`;ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();s.y-=s.speedY;s.x+=s.speedX;if(s.y<0){s.y=height;s.x=Math.random()*width;}}}
+function animateParticles(){drawSnowflakes();drawSparkles();requestAnimationFrame(animateParticles);}
+window.addEventListener('resize',()=>{resizeCanvas();createSnowflakes();createSparkles();});
+resizeCanvas();createSnowflakes();createSparkles();animateParticles();
 
-  let TOKENS=[
-    {id:'bitcoin', symbol:'BTC', name:'Bitcoin', holdings:0},
-    {id:'ethereum', symbol:'ETH', name:'Ethereum', holdings:0},
-    {id:'dogecoin', symbol:'DOGE', name:'Dogecoin', holdings:0},
-    {id:'solana', symbol:'SOL', name:'Solana', holdings:0},
-    {id:'buy-the-hat', symbol:'HAT', name:'Buy the Hat', holdings:0, image:'https://via.placeholder.com/40'}
-  ];
+// --- Wake Up ---
+let progress=0,holdInterval=null,decayInterval=null;
+const wakeScreen=document.getElementById('wakeScreen');
+const gameScreen=document.getElementById('gameScreen');
+const characterWrapper=document.getElementById('characterWrapper');
+const character=document.getElementById('character');
+const sleepZs=document.querySelectorAll('.sleepZ');
+const progressBar=document.getElementById('progressBar');
+const progressText=document.getElementById('progressText');
+const progressContainer=document.getElementById('progressContainer');
+const holdToWakeImage=document.getElementById('holdToWakeImage');
+const wakeImg="https://i.imgur.com/LzmWDzp.png";
 
-  const tokensList=document.getElementById('tokens');
-  const lastUpdated=document.getElementById('lastUpdated');
-  const changeSelect=document.getElementById('changeSelect');
-  const portfolioTotal=document.getElementById('portfolioTotal');
-  let changePeriod='24h'; let prices={};
+function showSleepZ(show){sleepZs.forEach(z=>z.style.display=show?'block':'none');}
+function updateProgressBar(){progressBar.style.width=progress+'%';progressText.textContent=progress+'%';}
 
-  const coinSearch=document.getElementById('coinSearch');
-  const addCoinBtn=document.getElementById('addCoinBtn');
-  const autocomplete=document.getElementById('autocomplete');
-  let coinSuggestions=[]; let selectedCoin=null;
+character.addEventListener('mousedown',startHold);
+character.addEventListener('touchstart',startHold);
+character.addEventListener('mouseup',stopHold);
+character.addEventListener('mouseleave',stopHold);
+character.addEventListener('touchend',stopHold);
 
-  let currentPage=0;
-  const itemsPerPage=5;
+function startHold(e){e.preventDefault();characterWrapper.classList.add('activeTouch');showSleepZ(true);progressContainer.style.display='block';holdToWakeImage.style.display='block';clearInterval(holdInterval);clearInterval(decayInterval);
+holdInterval=setInterval(()=>{
+  if(progress<100){progress+=2;if(progress>100)progress=100;updateProgressBar();}
+  if(progress>=100){clearInterval(holdInterval);showSleepZ(false);character.src=wakeImg;progressContainer.style.display='none';holdToWakeImage.style.display='none';characterWrapper.classList.remove('activeTouch');setTimeout(goToGame,500);}
+},100);}
 
-  async function loadAllCoins(){
-    coinSuggestions=[];
-    try{
-      const cgData=await (await fetch('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&order=market_cap_desc&per_page=250&page=1')).json();
-      coinSuggestions=cgData.map(c=>({id:c.id,name:c.name,symbol:c.symbol,image:c.image}));
-      const dexData=await (await fetch('https://api.dexscreener.com/latest/dex/tokens')).then(r=>r.json());
-      if(dexData.tokens){ coinSuggestions.push(...dexData.tokens.map(t=>({id:t.address,name:t.name,symbol:t.symbol,image:t.logo||'https://via.placeholder.com/40'}))); }
-    }catch(e){console.error(e);}
-  }
+function stopHold(){clearInterval(holdInterval);clearInterval(decayInterval);characterWrapper.classList.remove('activeTouch');
+decayInterval=setInterval(()=>{if(progress>0 && progress<100){progress-=2;if(progress<0)progress=0;updateProgressBar();}else{clearInterval(decayInterval);}},100);}
 
-  function formatUSD(v){if(v==null)return'—';return v<1?'$'+v.toFixed(6):'$'+v.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
-  function formatChange(pc){if(pc==null)return'—';const sign=pc>=0?'+':'';return`${sign}${pc.toFixed(2)}%`; }
+// --- Game Grid ---
+const images=[
+'https://i.postimg.cc/HLQtJ8wc/processed-image-9.png', // GOLD
+'https://i.postimg.cc/FHkp4B1x/greeen2.png',         // GREEN
+'https://i.postimg.cc/XvM87kC6/processed-image-8.png' // RED
+];
 
-  function renderToken(t){
-    const li=document.createElement('li');
-    li.className='token';
-    li.dataset.id=t.id;
-    li.innerHTML=`
-      <div class="left">
-        <div class="icon"><img src="${t.image}" alt="${t.name}"></div>
-        <div class="meta"><div class="name">${t.name}</div><div class="sym">${t.symbol.toUpperCase()}</div></div>
-      </div>
-      <div class="price"><div class="usd">—</div><div class="change">—</div></div>
-      <div class="holdings"><input type="number" min="0" placeholder="0"><div class="hold-value">Value: —</div></div>
-      <button class="remove-btn">X</button>`; // updated X button
-    
-    const inputEl = li.querySelector('input');
-    inputEl.value = t.holdings || 0;
+let grid=[];
+let revealed=[];
+let counts={gold:0,green:0,red:0};
+let gameOver=false;
+const message=document.getElementById('message');
+const restartBtn=document.getElementById('restartBtn');
 
-    inputEl.addEventListener('input', (e)=>{
-      t.holdings = parseFloat(e.target.value) || 0; 
-      updatePortfolio();
-    });
+function goToGame(){wakeScreen.classList.remove('active');gameScreen.classList.add('active');initGameGrid();}
 
-    li.querySelector('.remove-btn').addEventListener('click',()=>{
-      TOKENS=TOKENS.filter(x=>x.id!==t.id);
-      renderPage();
-      updatePortfolio();
-    });
-    return li;
-  }
-
-  function renderPage(){
-    tokensList.innerHTML='';
-    const start=currentPage*itemsPerPage;
-    const pageItems=TOKENS.slice(start,start+itemsPerPage);
-    pageItems.forEach(t=>tokensList.appendChild(renderToken(t)));
-    document.getElementById('prevPage').style.display = currentPage>0?'inline-block':'none';
-    document.getElementById('nextPage').style.display = (currentPage+1)*itemsPerPage<TOKENS.length?'inline-block':'none';
-  }
-
-  document.getElementById('prevPage').addEventListener('click',()=>{if(currentPage>0){currentPage--; renderPage();}});
-  document.getElementById('nextPage').addEventListener('click',()=>{if((currentPage+1)*itemsPerPage<TOKENS.length){currentPage++; renderPage();}});
-
-  async function fetchPrices(){
-    try{
-      if(TOKENS.length===0) return;
-      const ids=TOKENS.map(c=>c.id).join(',');
-      const url=`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&price_change_percentage=1h,24h`;
-      const data=await (await fetch(url)).json();
-
-      TOKENS.forEach(t => {
-        const coin = data.find(c => c.id === t.id);
-        if (coin) {
-          prices[t.id] = coin.current_price;
-          const li = tokensList.querySelector(`li[data-id="${t.id}"]`);
-          if (li) {
-            li.querySelector('.icon img').src = coin.image;
-            li.querySelector('.usd').textContent = formatUSD(coin.current_price);
-            const ch = changePeriod === '24h' ? coin.price_change_percentage_24h : coin.price_change_percentage_1h_in_currency;
-            const chEl = li.querySelector('.change');
-            chEl.textContent = formatChange(ch);
-            chEl.style.color = ch > 0 ? '#7ee787' : ch < 0 ? '#ff8b8b' : '#9aa4b2';
-          }
-        } else {
-          if (!prices[t.id]) prices[t.id] = 0;
-          const li = tokensList.querySelector(`li[data-id="${t.id}"]`);
-          if (li) {
-            li.querySelector('.usd').textContent = formatUSD(prices[t.id]);
-            li.querySelector('.change').textContent = '—';
-            li.querySelector('.icon img').src = t.image;
-            li.querySelector('.change').style.color = '#9aa4b2';
-          }
-        }
-      });
-
-      updatePortfolio();
-      lastUpdated.textContent='Last updated: '+new Date().toLocaleTimeString();
-    }catch(e){console.error(e);}
-  }
-
-  function updatePortfolio(){
-    let total = 0;
-    TOKENS.forEach(t => {
-      const price = prices[t.id] || 0;
-      total += (t.holdings || 0) * price;
-
-      const li = tokensList.querySelector(`li[data-id="${t.id}"]`);
-      if(li){
-        li.querySelector('input').value = t.holdings || 0;
-        li.querySelector('.hold-value').textContent = "Value: " + formatUSD(t.holdings * price);
-      }
-    });
-    portfolioTotal.textContent = "Portfolio: " + formatUSD(total);
-  }
-
-  async function searchCoins(query){
-    if(!query) return [];
-    const q=query.toLowerCase();
-    return coinSuggestions.filter(c=>c.name.toLowerCase().includes(q)||c.symbol.toLowerCase().includes(q)).slice(0,5);
-  }
-
-  coinSearch.addEventListener('input', async()=>{
-    const q=coinSearch.value;
-    const results=await searchCoins(q);
-    autocomplete.innerHTML=''; selectedCoin=null;
-    if(results.length>0){
-      results.forEach(c=>{
-        const div=document.createElement('div');
-        div.innerHTML=`<img src="${c.image}">${c.name} (${c.symbol.toUpperCase()})`;
-        div.addEventListener('click',()=>{coinSearch.value=c.name+' ('+c.symbol.toUpperCase()+')'; selectedCoin=c; addCoinBtn.disabled=false; autocomplete.innerHTML='';});
-        autocomplete.appendChild(div);
-      });
-    }
-    addCoinBtn.disabled=!selectedCoin;
-  });
-
-  addCoinBtn.addEventListener('click',()=>{
-    if(selectedCoin && !TOKENS.find(c=>c.id===selectedCoin.id)){
-      selectedCoin.holdings = 0;
-      TOKENS.push(selectedCoin); renderPage(); fetchPrices();
-      coinSearch.value=''; selectedCoin=null; addCoinBtn.disabled=true;
+function initGameGrid(){
+  const gameGrid=document.getElementById('gameGrid');
+  gameGrid.innerHTML='';
+  grid=[];
+  revealed=[];
+  counts={gold:0,green:0,red:0};
+  gameOver=false;
+  message.textContent='';
+  restartBtn.style.display='none';
+  restartBtn.classList.remove('restart-green','restart-gold','restart-red');
+  const positions=shuffle(Array.from({length:12},(_,i)=>i));
+  ['gold','green','red'].forEach((type,i)=>{
+    for(let j=0;j<4;j++){
+      const pos=positions.pop();
+      grid[pos]={type,img:images[i]};
     }
   });
+  for(let i=0;i<12;i++){
+    const cell=document.createElement('div');
+    cell.className='cell';
+    cell.dataset.index=i;
+    cell.addEventListener('click',()=>revealCell(i));
+    gameGrid.appendChild(cell);
+  }
+}
 
-  changeSelect.addEventListener('change',()=>{changePeriod=changeSelect.value; fetchPrices();});
-  document.addEventListener('click', e=>{if(!document.querySelector('.search-bar').contains(e.target)){autocomplete.innerHTML='';}});
+function shuffle(array){for(let i=array.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[array[i],array[j]]=[array[j],array[i]];}return array;}
 
-  await loadAllCoins();
-  renderPage();
-  fetchPrices();
-  setInterval(fetchPrices,5000);
-});
+function revealCell(index){
+  if(revealed.includes(index) || gameOver) return;
+  revealed.push(index);
+  const cell=document.querySelector(`.cell[data-index="${index}"]`);
+  const {type,img}=grid[index];
+  cell.innerHTML=''; 
+  const imageElem=document.createElement('img'); imageElem.src=img;
+  cell.appendChild(imageElem);
+  if(type==='gold') cell.classList.add('glow-gold');
+  if(type==='green') cell.classList.add('glow-green');
+  if(type==='red') cell.classList.add('glow-red');
+
+  counts[type]++;
+  if(counts['gold']>=3){
+    message.innerHTML='<span class="ticker-gold">🌟 GOLDEN RAID!</span>';
+    gameOver=true;
+    showRestart('gold');
+  }else if(counts['green']>=3){
+    message.innerHTML='<span class="ticker-green">✅ GOOD RAID!</span>';
+    gameOver=true;
+    showRestart('green');
+  }else if(counts['red']>=3){
+    message.innerHTML='<span class="ticker-red">❌ BAD RAID</span>';
+    gameOver=true;
+    showRestart('red');
+  }
+}
+
+function showRestart(type){
+    restartBtn.style.display='block';
+    restartBtn.classList.remove('restart-green','restart-gold','restart-red');
+    if(type==='green') restartBtn.classList.add('restart-green');
+    else if(type==='gold') restartBtn.classList.add('restart-gold');
+    else if(type==='red') restartBtn.classList.add('restart-red');
+}
+
+restartBtn.addEventListener('click',initGameGrid);
 </script>
 </body>
 </html>
+
