@@ -19,7 +19,7 @@ html,body{height:100%;font-family:Arial,sans-serif;overflow:hidden;background: l
 .sleepZ:nth-child(2){top:20px; left:70px;width:22px;height:22px;animation-duration:2s;animation-delay:0s;}
 .sleepZ:nth-child(3){top:30px; left:110px;width:26px;height:26px;animation-duration:2.5s;animation-delay:0.5s;}
 .sleepZ:nth-child(4){top:40px; left:90px;width:24px;height:24px;animation-duration:2.2s;animation-delay:1s;}
-@keyframes sleepZAnim{0%{opacity:0;transform:translateY(0);}30%{opacity:1;transform:translateY(-10px);}60%{opacity:0.5;transform:translateY(-20px);}100%{opacity:0;transform:translateY(-30px);}}
+@keyframes sleepZAnim{0%{opacity:0;transform:translateY(0);}30%{opacity:1;transform:translateY(-10px);}60%{opacity:0.5;transform:translateY(-20px);}100%{opacity:0;transform:translateY(-30px);} }
 #characterWrapper:hover #character{transform:scale(1.1);filter:brightness(1.2);}
 #characterWrapper:hover .sleepZ{transform:scale(1.3);}
 #characterWrapper.activeTouch #character{transform:scale(1.1);filter:brightness(1.2);}
@@ -29,14 +29,33 @@ html,body{height:100%;font-family:Arial,sans-serif;overflow:hidden;background: l
 #progressBar{height:100%;width:0%;background:limegreen;transition:width 0.1s linear;}
 #progressText{position:absolute;top:-20px;font-weight:bold;color:black;text-align:center;width:100%;}
 
-#gameScreen{background: rgba(0,0,0,0.5);padding:20px;border-radius:15px;display:flex;flex-direction:column;align-items:center;}
+#gameScreen{background: rgba(0,0,0,0.5);padding:20px;border-radius:15px;display:flex;flex-direction:column;align-items:center;position:relative;}
 #gameScreen img#gameTitle{max-width:300px;}
+.grid-wrapper{position: relative;}
 .grid{display:grid;grid-template-columns:repeat(4,60px);grid-gap:10px;margin-top:25px;}
-.cell{width:60px;height:60px;background:black;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.3s;}
+.cell{width:60px;height:60px;background:black;border-radius:10px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:0.3s;z-index:1;}
 .cell img{width:100%;height:100%;border-radius:10px;transition:0.3s;}
 .glow-gold{box-shadow:0 0 15px 5px gold;}
 .glow-green{box-shadow:0 0 15px 5px limegreen;}
 .glow-red{box-shadow:0 0 15px 5px red;}
+
+/* --- ROUND POPUP --- */
+#roundPopup{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, calc(-50% + 10px)); /* moved 10px lower */
+  font-size: 2rem;
+  color: white;
+  font-weight: bold;
+  text-shadow: 2px 2px 5px #000;
+  opacity: 0;
+  transition: opacity 0.5s;
+  pointer-events: none;
+  z-index: 3;
+  text-align: center;
+}
+
 #message{margin-top:15px;font-weight:bold;font-size:1.2rem;text-align:center;}
 .ticker{animation:blink 1s infinite;}
 .ticker-green{animation:blink 1s infinite;color:limegreen;font-weight:bold;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 5px limegreen,0 0 10px limegreen;}
@@ -47,7 +66,13 @@ html,body{height:100%;font-family:Arial,sans-serif;overflow:hidden;background: l
 .restart-green{background:limegreen;color:#000;}
 .restart-gold{background:gold;color:#000;}
 .restart-red{background:red;color:#fff;}
-#logo{margin-top:20px;max-width:300px;} /* 2x larger */
+#logo{margin-top:20px;max-width:300px;}
+#scoreHUD{margin-top:15px;font-weight:bold;font-size:1.2rem;color:white;text-shadow:1px 1px 3px #000;}
+#roundTracker{display:flex;gap:10px;margin-top:10px;}
+.tracker-circle{width:20px;height:20px;background:rgba(255,255,255,0.2);border-radius:50%;border:1px solid #fff;}
+.tracker-circle.active.red{background:red;}
+.tracker-circle.active.green{background:limegreen;}
+.tracker-circle.active.gold{background:gold;}
 </style>
 </head>
 <body>
@@ -68,9 +93,22 @@ html,body{height:100%;font-family:Arial,sans-serif;overflow:hidden;background: l
 
 <div id="gameScreen" class="screen">
   <img id="gameTitle" src="https://i.postimg.cc/fLws0X9J/billieraid.png" alt="Game Title">
-  <div class="grid" id="gameGrid"></div>
+
+  <div class="grid-wrapper">
+    <div class="grid" id="gameGrid"></div>
+    <div id="roundPopup"></div>
+  </div>
+
+  <div id="scoreHUD"></div>
+  <div id="roundTracker">
+    <div class="tracker-circle" id="tracker1"></div>
+    <div class="tracker-circle" id="tracker2"></div>
+    <div class="tracker-circle" id="tracker3"></div>
+    <div class="tracker-circle" id="tracker4"></div>
+    <div class="tracker-circle" id="tracker5"></div>
+  </div>
   <div id="message"></div>
-  <button id="restartBtn">Restart</button>
+  <button id="restartBtn">Next Round</button>
   <img id="logo" src="https://i.postimg.cc/Jhbq2Yzd/power2f.png" alt="Logo">
 </div>
 
@@ -111,14 +149,33 @@ character.addEventListener('mouseup',stopHold);
 character.addEventListener('mouseleave',stopHold);
 character.addEventListener('touchend',stopHold);
 
-function startHold(e){e.preventDefault();characterWrapper.classList.add('activeTouch');showSleepZ(true);progressContainer.style.display='block';holdToWakeImage.style.display='block';clearInterval(holdInterval);clearInterval(decayInterval);
-holdInterval=setInterval(()=>{
-  if(progress<100){progress+=2;if(progress>100)progress=100;updateProgressBar();}
-  if(progress>=100){clearInterval(holdInterval);showSleepZ(false);character.src=wakeImg;progressContainer.style.display='none';holdToWakeImage.style.display='none';characterWrapper.classList.remove('activeTouch');setTimeout(goToGame,500);}
-},100);}
+function startHold(e){
+  e.preventDefault();
+  characterWrapper.classList.add('activeTouch');
+  showSleepZ(true);
+  progressContainer.style.display='block';
+  holdToWakeImage.style.display='block';
+  clearInterval(holdInterval);clearInterval(decayInterval);
+  holdInterval=setInterval(()=>{
+    if(progress<100){progress+=2;if(progress>100)progress=100;updateProgressBar();}
+    if(progress>=100){
+      clearInterval(holdInterval);
+      showSleepZ(false);
+      character.src=wakeImg;
+      progressContainer.style.display='none';
+      holdToWakeImage.style.display='none';
+      characterWrapper.classList.remove('activeTouch');
+      setTimeout(goToGame,500);
+    }
+  },100);
+}
 
-function stopHold(){clearInterval(holdInterval);clearInterval(decayInterval);characterWrapper.classList.remove('activeTouch');
-decayInterval=setInterval(()=>{if(progress>0 && progress<100){progress-=2;if(progress<0)progress=0;updateProgressBar();}else{clearInterval(decayInterval);}},100);}
+function stopHold(){
+  clearInterval(holdInterval);
+  clearInterval(decayInterval);
+  characterWrapper.classList.remove('activeTouch');
+  decayInterval=setInterval(()=>{if(progress>0 && progress<100){progress-=2;if(progress<0)progress=0;updateProgressBar();}else{clearInterval(decayInterval);}},100);
+}
 
 // --- Game Grid ---
 const images=[
@@ -127,32 +184,34 @@ const images=[
 'https://i.postimg.cc/XvM87kC6/processed-image-8.png' // RED
 ];
 
-let grid=[];
-let revealed=[];
-let counts={gold:0,green:0,red:0};
-let gameOver=false;
+let grid=[], revealed=[], counts={gold:0,green:0,red:0}, gameOver=false;
 const message=document.getElementById('message');
 const restartBtn=document.getElementById('restartBtn');
+const roundPopup=document.getElementById('roundPopup');
+const tracker=document.querySelectorAll('.tracker-circle');
 
-function goToGame(){wakeScreen.classList.remove('active');gameScreen.classList.add('active');initGameGrid();}
+// --- Rounds and Score ---
+let round=1, totalRounds=5, totalScore=0, recordScore=localStorage.getItem('recordScore') ? parseInt(localStorage.getItem('recordScore')) : 0;
+const scoreHUD=document.getElementById('scoreHUD');
+
+function updateHUD(){scoreHUD.textContent = `Round: ${round}/${totalRounds} | Total: ${totalScore} | Record: ${recordScore}`;}
+
+// --- Popup function ---
+function showRoundPopup(){
+  roundPopup.textContent = `Round ${round}`;
+  roundPopup.style.opacity = '1';
+  setTimeout(() => { roundPopup.style.opacity = '0'; }, 1000);
+}
+
+// --- Game Functions ---
+function goToGame(){wakeScreen.classList.remove('active');gameScreen.classList.add('active');initGameGrid();updateHUD();showRoundPopup();}
 
 function initGameGrid(){
   const gameGrid=document.getElementById('gameGrid');
-  gameGrid.innerHTML='';
-  grid=[];
-  revealed=[];
-  counts={gold:0,green:0,red:0};
-  gameOver=false;
-  message.textContent='';
-  restartBtn.style.display='none';
-  restartBtn.classList.remove('restart-green','restart-gold','restart-red');
+  gameGrid.innerHTML=''; grid=[]; revealed=[]; counts={gold:0,green:0,red:0}; gameOver=false;
+  message.textContent=''; restartBtn.style.display='none'; restartBtn.classList.remove('restart-green','restart-gold','restart-red');
   const positions=shuffle(Array.from({length:12},(_,i)=>i));
-  ['gold','green','red'].forEach((type,i)=>{
-    for(let j=0;j<4;j++){
-      const pos=positions.pop();
-      grid[pos]={type,img:images[i]};
-    }
-  });
+  ['gold','green','red'].forEach((type,i)=>{for(let j=0;j<4;j++){const pos=positions.pop();grid[pos]={type,img:images[i]};}});
   for(let i=0;i<12;i++){
     const cell=document.createElement('div');
     cell.className='cell';
@@ -160,6 +219,7 @@ function initGameGrid(){
     cell.addEventListener('click',()=>revealCell(i));
     gameGrid.appendChild(cell);
   }
+  updateHUD();
 }
 
 function shuffle(array){for(let i=array.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[array[i],array[j]]=[array[j],array[i]];}return array;}
@@ -177,31 +237,27 @@ function revealCell(index){
   if(type==='red') cell.classList.add('glow-red');
 
   counts[type]++;
-  if(counts['gold']>=3){
-    message.innerHTML='<span class="ticker-gold">🌟 GOLDEN RAID!</span>';
-    gameOver=true;
-    showRestart('gold');
-  }else if(counts['green']>=3){
-    message.innerHTML='<span class="ticker-green">✅ GOOD RAID!</span>';
-    gameOver=true;
-    showRestart('green');
-  }else if(counts['red']>=3){
-    message.innerHTML='<span class="ticker-red">❌ BAD RAID</span>';
-    gameOver=true;
-    showRestart('red');
-  }
+  if(counts['gold']>=3){message.innerHTML='<span class="ticker-gold">🌟 GOLDEN RAID!</span>';gameOver=true;addScore(1250);showRestart('gold');tracker[round-1].className='tracker-circle active gold';} 
+  else if(counts['green']>=3){message.innerHTML='<span class="ticker-green">✅ GOOD RAID!</span>';gameOver=true;addScore(750);showRestart('green');tracker[round-1].className='tracker-circle active green';} 
+  else if(counts['red']>=3){message.innerHTML='<span class="ticker-red">❌ BAD RAID</span>';gameOver=true;addScore(450);showRestart('red');tracker[round-1].className='tracker-circle active red';}
 }
+
+function addScore(points){totalScore+=points;if(totalScore>recordScore){recordScore=totalScore;localStorage.setItem('recordScore',recordScore);}updateHUD();}
 
 function showRestart(type){
-    restartBtn.style.display='block';
-    restartBtn.classList.remove('restart-green','restart-gold','restart-red');
-    if(type==='green') restartBtn.classList.add('restart-green');
-    else if(type==='gold') restartBtn.classList.add('restart-gold');
-    else if(type==='red') restartBtn.classList.add('restart-red');
+  restartBtn.style.display='block';
+  restartBtn.classList.remove('restart-green','restart-gold','restart-red');
+  if(type==='green') restartBtn.classList.add('restart-green');
+  else if(type==='gold') restartBtn.classList.add('restart-gold');
+  else if(type==='red') restartBtn.classList.add('restart-red');
+  restartBtn.textContent = (round < totalRounds) ? 'Next Round' : 'Play Again';
 }
 
-restartBtn.addEventListener('click',initGameGrid);
+// --- Next Round Handler ---
+restartBtn.addEventListener('click',()=>{
+  if(round<totalRounds){round++; initGameGrid(); showRoundPopup();} 
+  else {round=1; totalScore=0; tracker.forEach(c=>c.className='tracker-circle'); initGameGrid(); showRoundPopup();}
+});
 </script>
 </body>
 </html>
-
