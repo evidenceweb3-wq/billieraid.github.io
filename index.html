@@ -44,7 +44,7 @@ html,body{height:100%;font-family:Arial,sans-serif;overflow:hidden;background: l
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, calc(-50% + 10px)); /* moved 10px lower */
+  transform: translate(-50%, calc(-50% + 10px));
   font-size: 2rem;
   color: white;
   font-weight: bold;
@@ -58,9 +58,9 @@ html,body{height:100%;font-family:Arial,sans-serif;overflow:hidden;background: l
 
 #message{margin-top:15px;font-weight:bold;font-size:1.2rem;text-align:center;}
 .ticker{animation:blink 1s infinite;}
-.ticker-green{animation:blink 1s infinite;color:limegreen;font-weight:bold;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 5px limegreen,0 0 10px limegreen;}
-.ticker-gold{animation:blink 1s infinite;color:gold;font-weight:bold;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 5px gold,0 0 10px gold;}
-.ticker-red{animation:blink 1s infinite;color:red;font-weight:bold;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 5px red,0 0 10px red;}
+.ticker-green{animation:blink 1s infinite;color:limegreen;font-weight:bold;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 5px limegreen,0 0 10px limegreen; transform:translateY(5px);}
+.ticker-gold{animation:blink 1s infinite;color:gold;font-weight:bold;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 5px gold,0 0 10px gold; transform:translateY(5px);}
+.ticker-red{animation:blink 1s infinite;color:red;font-weight:bold;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 5px red,0 0 10px red; transform:translateY(5px);}
 @keyframes blink{0%,50%,100%{opacity:1;}25%,75%{opacity:0;}}
 #restartBtn{margin-top:15px;padding:10px 20px;background:#fff;color:#000;border:none;border-radius:10px;cursor:pointer;font-weight:bold;display:none;transition:0.3s;}
 .restart-green{background:limegreen;color:#000;}
@@ -73,12 +73,19 @@ html,body{height:100%;font-family:Arial,sans-serif;overflow:hidden;background: l
 .tracker-circle.active.red{background:red;}
 .tracker-circle.active.green{background:limegreen;}
 .tracker-circle.active.gold{background:gold;}
+
+/* --- Instructions --- */
+#instructionsScreen{background: rgba(0,0,0,0.5);}
+.ticker-ins-gold{color:gold;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 5px gold,0 0 10px gold; animation:blink 1s infinite; transform:translateY(5px);}
+.ticker-ins-green{color:limegreen;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 5px limegreen,0 0 10px limegreen; animation:blink 1s infinite; transform:translateY(5px);}
+.ticker-ins-red{color:red;text-shadow:-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000,1px 1px 0 #000,0 0 5px red,0 0 10px red; animation:blink 1s infinite; transform:translateY(5px);}
 </style>
 </head>
 <body>
 
 <canvas id="snowCanvas"></canvas>
 
+<!-- WAKE SCREEN -->
 <div id="wakeScreen" class="screen active">
   <div id="characterWrapper">
     <img id="character" src="https://i.imgur.com/HuFf7Xl.png" alt="Sleep Character">
@@ -91,6 +98,41 @@ html,body{height:100%;font-family:Arial,sans-serif;overflow:hidden;background: l
   </div>
 </div>
 
+<!-- INSTRUCTIONS SCREEN -->
+<div id="instructionsScreen" class="screen">
+  <div style="background: rgba(0,0,0,0.5); width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+    <h2 style="margin-bottom:30px; text-align:center; font-size:2rem; color:white;">MATCH 3 BILLIES OF THE SAME!</h2>
+    <div style="display:flex; flex-direction:column; gap:20px; margin-bottom:40px; text-align:center;">
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="display:flex; gap:10px;">
+          <div class="cell glow-gold"><img src="https://i.postimg.cc/HLQtJ8wc/processed-image-9.png" /></div>
+          <div class="cell glow-gold"><img src="https://i.postimg.cc/HLQtJ8wc/processed-image-9.png" /></div>
+          <div class="cell glow-gold"><img src="https://i.postimg.cc/HLQtJ8wc/processed-image-9.png" /></div>
+        </div>
+        <div class="ticker-ins-gold" style="margin-top:5px;">🌟 Golden Raid: 1250 Points</div>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="display:flex; gap:10px;">
+          <div class="cell glow-green"><img src="https://i.postimg.cc/FHkp4B1x/greeen2.png" /></div>
+          <div class="cell glow-green"><img src="https://i.postimg.cc/FHkp4B1x/greeen2.png" /></div>
+          <div class="cell glow-green"><img src="https://i.postimg.cc/FHkp4B1x/greeen2.png" /></div>
+        </div>
+        <div class="ticker-ins-green" style="margin-top:5px;">✅ Good Raid: 750 Points</div>
+      </div>
+      <div style="display:flex; flex-direction:column; align-items:center;">
+        <div style="display:flex; gap:10px;">
+          <div class="cell glow-red"><img src="https://i.postimg.cc/XvM87kC6/processed-image-8.png" /></div>
+          <div class="cell glow-red"><img src="https://i.postimg.cc/XvM87kC6/processed-image-8.png" /></div>
+          <div class="cell glow-red"><img src="https://i.postimg.cc/XvM87kC6/processed-image-8.png" /></div>
+        </div>
+        <div class="ticker-ins-red" style="margin-top:5px;">❌ Bad Raid: 450 Points</div>
+      </div>
+    </div>
+    <button id="startGameBtn" style="padding:15px 25px;font-size:1.2rem;font-weight:bold;border:none;border-radius:10px;cursor:pointer;">I Understand</button>
+  </div>
+</div>
+
+<!-- GAME SCREEN -->
 <div id="gameScreen" class="screen">
   <img id="gameTitle" src="https://i.postimg.cc/fLws0X9J/billieraid.png" alt="Game Title">
 
@@ -130,6 +172,7 @@ resizeCanvas();createSnowflakes();createSparkles();animateParticles();
 // --- Wake Up ---
 let progress=0,holdInterval=null,decayInterval=null;
 const wakeScreen=document.getElementById('wakeScreen');
+const instructionsScreen=document.getElementById('instructionsScreen');
 const gameScreen=document.getElementById('gameScreen');
 const characterWrapper=document.getElementById('characterWrapper');
 const character=document.getElementById('character');
@@ -165,95 +208,80 @@ function startHold(e){
       progressContainer.style.display='none';
       holdToWakeImage.style.display='none';
       characterWrapper.classList.remove('activeTouch');
-      setTimeout(goToGame,500);
+      setTimeout(showInstructions,500);
     }
   },100);
 }
 
-function stopHold(){
-  clearInterval(holdInterval);
-  clearInterval(decayInterval);
-  characterWrapper.classList.remove('activeTouch');
-  decayInterval=setInterval(()=>{if(progress>0 && progress<100){progress-=2;if(progress<0)progress=0;updateProgressBar();}else{clearInterval(decayInterval);}},100);
+function stopHold(){clearInterval(holdInterval);clearInterval(decayInterval);characterWrapper.classList.remove('activeTouch');decayInterval=setInterval(()=>{if(progress>0&&progress<100){progress-=2;if(progress<0)progress=0;updateProgressBar();}else{clearInterval(decayInterval);}},100);}
+
+// --- Show Instructions ---
+function showInstructions(){
+  wakeScreen.classList.remove('active');
+  instructionsScreen.classList.add('active');
 }
 
-// --- Game Grid ---
+document.getElementById('startGameBtn').addEventListener('click',()=>{
+  instructionsScreen.classList.remove('active');
+  gameScreen.classList.add('active');
+  initGameGrid();
+  updateHUD();
+  showRoundPopup();
+});
+
+// --- Game Grid & Logic ---
 const images=[
 'https://i.postimg.cc/HLQtJ8wc/processed-image-9.png', // GOLD
 'https://i.postimg.cc/FHkp4B1x/greeen2.png',         // GREEN
 'https://i.postimg.cc/XvM87kC6/processed-image-8.png' // RED
 ];
-
 let grid=[], revealed=[], counts={gold:0,green:0,red:0}, gameOver=false;
 const message=document.getElementById('message');
 const restartBtn=document.getElementById('restartBtn');
 const roundPopup=document.getElementById('roundPopup');
 const tracker=document.querySelectorAll('.tracker-circle');
 
-// --- Rounds and Score ---
-let round=1, totalRounds=5, totalScore=0, recordScore=localStorage.getItem('recordScore') ? parseInt(localStorage.getItem('recordScore')) : 0;
+// --- Rounds & Score ---
+let round=1,totalRounds=5,totalScore=0,recordScore=localStorage.getItem('recordScore')?parseInt(localStorage.getItem('recordScore')):0;
 const scoreHUD=document.getElementById('scoreHUD');
+function updateHUD(){scoreHUD.textContent=`Round: ${round}/${totalRounds} | Total: ${totalScore} | Record: ${recordScore}`;}
 
-function updateHUD(){scoreHUD.textContent = `Round: ${round}/${totalRounds} | Total: ${totalScore} | Record: ${recordScore}`;}
+// --- Popup ---
+function showRoundPopup(){roundPopup.textContent=`Round ${round}`;roundPopup.style.opacity='1';setTimeout(()=>{roundPopup.style.opacity='0';},1000);}
 
-// --- Popup function ---
-function showRoundPopup(){
-  roundPopup.textContent = `Round ${round}`;
-  roundPopup.style.opacity = '1';
-  setTimeout(() => { roundPopup.style.opacity = '0'; }, 1000);
-}
-
-// --- Game Functions ---
-function goToGame(){wakeScreen.classList.remove('active');gameScreen.classList.add('active');initGameGrid();updateHUD();showRoundPopup();}
-
+// --- Grid Init ---
 function initGameGrid(){
-  const gameGrid=document.getElementById('gameGrid');
-  gameGrid.innerHTML=''; grid=[]; revealed=[]; counts={gold:0,green:0,red:0}; gameOver=false;
-  message.textContent=''; restartBtn.style.display='none'; restartBtn.classList.remove('restart-green','restart-gold','restart-red');
+  const gameGrid=document.getElementById('gameGrid');gameGrid.innerHTML='';grid=[];revealed=[];counts={gold:0,green:0,red:0};gameOver=false;message.textContent='';restartBtn.style.display='none';restartBtn.classList.remove('restart-green','restart-gold','restart-red');
   const positions=shuffle(Array.from({length:12},(_,i)=>i));
   ['gold','green','red'].forEach((type,i)=>{for(let j=0;j<4;j++){const pos=positions.pop();grid[pos]={type,img:images[i]};}});
-  for(let i=0;i<12;i++){
-    const cell=document.createElement('div');
-    cell.className='cell';
-    cell.dataset.index=i;
-    cell.addEventListener('click',()=>revealCell(i));
-    gameGrid.appendChild(cell);
-  }
+  for(let i=0;i<12;i++){const cell=document.createElement('div');cell.className='cell';cell.dataset.index=i;cell.addEventListener('click',()=>revealCell(i));gameGrid.appendChild(cell);}
   updateHUD();
 }
 
 function shuffle(array){for(let i=array.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[array[i],array[j]]=[array[j],array[i]];}return array;}
 
 function revealCell(index){
-  if(revealed.includes(index) || gameOver) return;
+  if(revealed.includes(index)||gameOver)return;
   revealed.push(index);
   const cell=document.querySelector(`.cell[data-index="${index}"]`);
-  const {type,img}=grid[index];
-  cell.innerHTML=''; 
-  const imageElem=document.createElement('img'); imageElem.src=img;
-  cell.appendChild(imageElem);
-  if(type==='gold') cell.classList.add('glow-gold');
-  if(type==='green') cell.classList.add('glow-green');
-  if(type==='red') cell.classList.add('glow-red');
-
+  const {type,img}=grid[index];cell.innerHTML='';const imageElem=document.createElement('img');imageElem.src=img;cell.appendChild(imageElem);
+  if(type==='gold')cell.classList.add('glow-gold');if(type==='green')cell.classList.add('glow-green');if(type==='red')cell.classList.add('glow-red');
   counts[type]++;
-  if(counts['gold']>=3){message.innerHTML='<span class="ticker-gold">🌟 GOLDEN RAID!</span>';gameOver=true;addScore(1250);showRestart('gold');tracker[round-1].className='tracker-circle active gold';} 
-  else if(counts['green']>=3){message.innerHTML='<span class="ticker-green">✅ GOOD RAID!</span>';gameOver=true;addScore(750);showRestart('green');tracker[round-1].className='tracker-circle active green';} 
-  else if(counts['red']>=3){message.innerHTML='<span class="ticker-red">❌ BAD RAID</span>';gameOver=true;addScore(450);showRestart('red');tracker[round-1].className='tracker-circle active red';}
+  if(counts['gold']>=3){
+    message.innerHTML='<span class="ticker-gold">🌟 GOLDEN RAID!</span>';gameOver=true;addScore(1250);showRestart('gold');tracker[round-1].className='tracker-circle active gold';
+  } 
+  else if(counts['green']>=3){
+    message.innerHTML='<span class="ticker-green">✅ GOOD RAID!</span>';gameOver=true;addScore(750);showRestart('green');tracker[round-1].className='tracker-circle active green';
+  } 
+  else if(counts['red']>=3){
+    message.innerHTML='<span class="ticker-red">❌ BAD RAID</span>';gameOver=true;addScore(450);showRestart('red');tracker[round-1].className='tracker-circle active red';
+  }
 }
 
 function addScore(points){totalScore+=points;if(totalScore>recordScore){recordScore=totalScore;localStorage.setItem('recordScore',recordScore);}updateHUD();}
+function showRestart(type){restartBtn.style.display='block';restartBtn.classList.remove('restart-green','restart-gold','restart-red');if(type==='green')restartBtn.classList.add('restart-green');else if(type==='gold')restartBtn.classList.add('restart-gold');else if(type==='red')restartBtn.classList.add('restart-red');restartBtn.textContent=(round<totalRounds)?'Next Round':'Play Again';}
 
-function showRestart(type){
-  restartBtn.style.display='block';
-  restartBtn.classList.remove('restart-green','restart-gold','restart-red');
-  if(type==='green') restartBtn.classList.add('restart-green');
-  else if(type==='gold') restartBtn.classList.add('restart-gold');
-  else if(type==='red') restartBtn.classList.add('restart-red');
-  restartBtn.textContent = (round < totalRounds) ? 'Next Round' : 'Play Again';
-}
-
-// --- Next Round Handler ---
+// --- Next Round ---
 restartBtn.addEventListener('click',()=>{
   if(round<totalRounds){round++; initGameGrid(); showRoundPopup();} 
   else {round=1; totalScore=0; tracker.forEach(c=>c.className='tracker-circle'); initGameGrid(); showRoundPopup();}
