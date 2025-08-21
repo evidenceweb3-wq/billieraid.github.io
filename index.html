@@ -281,14 +281,8 @@ function revealCell(index){
 function addScore(points){totalScore+=points;if(totalScore>recordScore){recordScore=totalScore;localStorage.setItem('recordScore',recordScore);}updateHUD();}
 function showRestart(type){restartBtn.style.display='block';restartBtn.classList.remove('restart-green','restart-gold','restart-red');if(type==='green')restartBtn.classList.add('restart-green');else if(type==='gold')restartBtn.classList.add('restart-gold');else if(type==='red')restartBtn.classList.add('restart-red');restartBtn.textContent=(round<totalRounds)?'Next Round':'Play Again';}
 
-// --- Dreamlo Keys ---
-const dreamloPublicKey = "68a7430e8f40bb12e06fd910";
-const dreamloPrivateKey = "poaoFfRcok-VaXb0hOZe7QV1BvuQhuHEig4EMFIAyDjg";
-
-// --- Local Scores ---
+// --- Leaderboard Setup ---
 let localScores = [];
-
-// --- Leaderboard DOM ---
 let leaderboardContainer = document.getElementById('leaderboardContainer');
 if(!leaderboardContainer){
   leaderboardContainer = document.createElement('div');
@@ -309,12 +303,9 @@ if(!leaderboardContainer){
   gameScreen.appendChild(leaderboardContainer);
 }
 
-// --- Update Local Leaderboard ---
 function updateLocalLeaderboard(highlightEntry=null){
-  // Sort and keep top 5
   localScores.sort((a,b)=>b.score - a.score);
   const top5 = localScores.slice(0,5);
-
   leaderboardContainer.innerHTML = "<strong>🏆 TOP 5</strong><br>";
   top5.forEach((entry,i)=>{
     let emoji = i===0?'🥇':i===1?'🥈':i===2?'🥉':'⭐';
@@ -325,52 +316,75 @@ function updateLocalLeaderboard(highlightEntry=null){
   });
 }
 
-// --- Fetch all historical entries from Dreamlo ---
+// --- Replace with your actual Dreamlo keys ---
+const PUBLIC_KEY = "68a7430e8f40bb12e06fd910";  // your public key
+const PRIVATE_KEY = "poaoFfRcok-VaXb0hOZe7QV1BvuQhuHEig4EMFIAyDjg";  // your private key
+
 async function fetchDreamloLeaderboard(){
-  try{
-    const res = await fetch(`https://dreamlo.com/lb/${dreamloPublicKey}/json`);
-    const data = await res.json();
-    localScores = [];
-    const entries = data?.dreamlo?.leaderboard?.entry || [];
-    entries.forEach(e=>{
-      localScores.push({name: e.name, score: parseInt(e.score)});
+  try {
+    const res = await fetch(`http://dreamlo.com/lb/${PUBLIC_KEY}/xml`);
+    const text = await res.text();
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(text,"application/xml");
+    const entries = Array.from(xml.querySelectorAll("dreamlo > leaderboard > entry"));
+    localScores = entries.map(e=>({
+      name: e.querySelector("name").textContent,
+      score: parseInt(e.querySelector("score").textContent)
+    }));
+    updateLocalLeaderboard();
+  } catch(e) {
+    console.warn("Unable to fetch Dreamlo leaderboard (likely CORS). Using local fallback.");
+    // optional: pre-fill with dummy data for local testing
+    localScores = [
+      {name:"AAA", score:1250},
+      {name:"BBB", score:1000},
+      {name:"CCC", score:750}
+    ];
+    updateLocalLeaderboard();
+  }
+}
+
+function submitScoreToDreamlo(playerName, score){
+  const url = `http://dreamlo.com/lb/${PRIVATE_KEY}/add/${encodeURIComponent(playerName)}/${score}`;
+  fetch(url)
+    .then(()=>{
+      // verify upload
+      fetch(`http://dreamlo.com/lb/${PUBLIC_KEY}/xml`)
+        .then(res => res.text())
+        .then(text => {
+          const parser = new DOMParser();
+          const xml = parser.parseFromString(text,"application/xml");
+          const entries = Array.from(xml.querySelectorAll("dreamlo > leaderboard > entry"));
+          const found = entries.some(e => e.querySelector("name").textContent === playerName &&
+                                           parseInt(e.querySelector("score").textContent) === score);
+          if(found){
+            alert(`✅ Score uploaded successfully for ${playerName}: ${score}`);
+          } else {
+            alert(`⚠️ Score could not be verified on Dreamlo. (If testing locally, ignore)`);
+          }
+          localScores.push({name: playerName, score: score});
+          updateLocalLeaderboard({name: playerName, score: score});
+        });
+    })
+    .catch(err => {console.warn("Dreamlo submit failed (likely CORS). Score stored locally."); 
+      localScores.push({name: playerName, score: score}); 
+      updateLocalLeaderboard({name: playerName, score: score});
     });
-    updateLocalLeaderboard(); // show top 5 immediately
-  }catch(e){ console.error("Error fetching Dreamlo leaderboard", e);}
 }
 
-// --- Submit new score to Dreamlo ---
-async function submitScoreToDreamlo(name, score){
-  try{
-    const url = `https://dreamlo.com/lb/${dreamloPrivateKey}/add/${encodeURIComponent(name)}/${score}`;
-    await fetch(url);
-    const newEntry = {name, score};
-    localScores.push(newEntry); // update local array
-    updateLocalLeaderboard(newEntry); // highlight new score
-    fetchDreamloLeaderboard(); // refresh from server to include all historical entries
-  }catch(e){ console.error("Error submitting Dreamlo", e);}
-}
-
-// --- Fetch leaderboard immediately on page load ---
-fetchDreamloLeaderboard();
-
-// --- Next Round Handler ---
+// --- Next Round Trigger ---
 restartBtn.addEventListener('click',()=>{
-  if(round < totalRounds){
-    round++;
-    initGameGrid();
-    showRoundPopup();
+  if(round<totalRounds){
+    round++; initGameGrid(); showRoundPopup();
   } else {
-    // 5/5 rounds completed
-    const playerName = prompt("Game Over! Enter your name for leaderboard:", "Player");
-    if(playerName) submitScoreToDreamlo(playerName, totalScore);
-    round = 1;
-    totalScore = 0;
-    tracker.forEach(c => c.className='tracker-circle');
-    initGameGrid();
-    showRoundPopup();
+    const playerName = prompt("Game Over! Enter your name for leaderboard:","Player");
+    if(playerName) submitScoreToDreamlo(playerName,totalScore);
+    round=1; totalScore=0; tracker.forEach(c=>c.className='tracker-circle'); initGameGrid(); showRoundPopup();
   }
 });
+
+// --- Fetch leaderboard on start ---
+fetchDreamloLeaderboard();
 </script>
 </body>
 </html>
