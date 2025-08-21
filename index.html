@@ -283,24 +283,29 @@ function showRestart(type){restartBtn.style.display='block';restartBtn.classList
 
 // --- Next Round ---
 restartBtn.addEventListener('click', () => {
-  if(gameOver){ // Only submit after a round win
-    let playerName = prompt("Enter your name for the leaderboard:");
-    if(playerName){
-      submitScore(playerName, totalScore);
-    }
-  }
-
   if(round < totalRounds){
     round++;
     initGameGrid();
     showRoundPopup();
   } else {
+    // Game finished
+    let playerName = prompt("Game over! Enter your name for the leaderboard:");
+    if(playerName){
+      submitScore(playerName, totalScore);
+    }
+
+    // Reset game
     round = 1;
     totalScore = 0;
     tracker.forEach(c => c.className = 'tracker-circle');
     initGameGrid();
     showRoundPopup();
   }
+
+  // Reset gameOver and message
+  gameOver = false;
+  message.textContent = '';
+  restartBtn.style.display = 'none';
 });
 </script>
   
@@ -330,14 +335,30 @@ function loadLeaderboard() {
 }
 
 function submitScore(name, score) {
-  // Direct HTTPS to Dreamlo for adding score (works on GitHub Pages)
   fetch(`https://dreamlo.com/lb/YjalU2-3Yk6RIoRqxNh4JQ3Kq0lO0E_US39f8jV27Y-A/add/${name}/${score}`)
-    .then(res => res.text()) // Dreamlo returns plain text for add
+    .then(res => res.text())
     .then(() => {
       console.log("Score submitted!");
-      loadLeaderboard(); // refresh leaderboard immediately
+      loadLeaderboard();
     })
     .catch(err => console.error("Error adding score:", err));
+}
+
+function loadLeaderboard() {
+  fetch("https://api.allorigins.win/get?url=" + encodeURIComponent("http://dreamlo.com/lb/68a7a4f48f40bb12e0701b8c/json"))
+    .then(res => res.json())
+    .then(data => {
+      const parsed = JSON.parse(data.contents);
+      const entries = parsed.dreamlo.leaderboard.entry || [];
+      const ul = document.getElementById("board");
+      ul.innerHTML = "";
+      entries.slice(0,5).forEach(player => {
+        const li = document.createElement("li");
+        li.textContent = player.name + " - " + player.score;
+        ul.appendChild(li);
+      });
+    })
+    .catch(err => console.error("Error loading leaderboard:", err));
 }
 
 // Load leaderboard on page load
@@ -345,3 +366,4 @@ loadLeaderboard();
 </script>
 </body>
 </html>
+
