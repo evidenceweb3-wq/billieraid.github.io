@@ -316,33 +316,39 @@ restartBtn.addEventListener('click', () => {
 </div>
 
 <script>
-// === LEADERBOARD FUNCTIONS ===
+// --- LEADERBOARD FUNCTION USING EXISTING HTML ---
 function loadLeaderboard() {
-  fetch("https://api.allorigins.win/get?url=" + encodeURIComponent("http://dreamlo.com/lb/68a7a4f48f40bb12e0701b8c/json"))
+  const proxyURL = "https://api.allorigins.win/get?url=" + encodeURIComponent("https://dreamlo.com/lb/68a7a4f48f40bb12e0701b8c/json");
+
+  fetch(proxyURL)
     .then(res => res.json())
     .then(data => {
       const parsed = JSON.parse(data.contents);
       const entries = parsed.dreamlo.leaderboard.entry || [];
-      const ul = document.getElementById("board");
-      ul.innerHTML = "";
+      
+      const container = document.getElementById("leaderboard"); // your existing container
+      container.innerHTML = ""; // clear previous entries
+
       entries.slice(0,5).forEach(player => {
-        const li = document.createElement("li");
-        li.textContent = player.name + " - " + player.score;
-        ul.appendChild(li);
+        // create an element to display the score
+        const item = document.createElement("div");
+        item.textContent = `${player.name} - ${player.score}`;
+        container.appendChild(item);
       });
     })
     .catch(err => console.error("Error loading leaderboard:", err));
 }
 
-function submitScore(name, score) {
-  fetch(`https://dreamlo.com/lb/YjalU2-3Yk6RIoRqxNh4JQ3Kq0lO0E_US39f8jV27Y-A/add/${name}/${score}`)
+function submitScore(name, score){
+  const dreamloURL = `https://dreamlo.com/lb/YjalU2-3Yk6RIoRqxNh4JQ3Kq0lO0E_US39f8jV27Y-A/add/${encodeURIComponent(name)}/${score}`;
+  const proxyURL = "https://api.allorigins.win/raw?url=" + encodeURIComponent(dreamloURL);
+
+  fetch(proxyURL)
     .then(res => res.text())
-    .then(() => {
-      console.log("Score submitted!");
-      loadLeaderboard();
-    })
-    .catch(err => console.error("Error adding score:", err));
+    .then(data => console.log("Add score response:", data))
+    .catch(err => console.error("Add score error:", err));
 }
+
 
 function loadLeaderboard() {
   fetch("https://api.allorigins.win/get?url=" + encodeURIComponent("http://dreamlo.com/lb/68a7a4f48f40bb12e0701b8c/json"))
@@ -366,4 +372,5 @@ loadLeaderboard();
 </script>
 </body>
 </html>
+
 
