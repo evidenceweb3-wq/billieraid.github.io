@@ -155,220 +155,240 @@ html,body{height:100%;font-family:Arial,sans-serif;overflow:hidden;background: l
 </div>
 
 <script>
-// --- Snow ---
-const canvas=document.getElementById('snowCanvas');
-const ctx=canvas.getContext('2d');
-let width,height,snowflakes=[],sparkles=[];
-function resizeCanvas(){width=canvas.width=window.innerWidth;height=canvas.height=window.innerHeight;}
-function createSnowflakes(){snowflakes=[];for(let i=0;i<150;i++){snowflakes.push({x:Math.random()*width,y:Math.random()*height,r:Math.random()*4+1,d:Math.random()*0.5+0.5});}}
-function createSparkles(){sparkles=[];for(let i=0;i<50;i++){sparkles.push({x:Math.random()*width,y:height+Math.random()*height,r:Math.random()*2+1,alpha:Math.random()*0.5+0.5,speedY:Math.random()*0.5+0.2,speedX:(Math.random()-0.5)*0.3});}}
-function drawSnowflakes(){ctx.clearRect(0,0,width,height);ctx.fillStyle='white';ctx.beginPath();for(const f of snowflakes){ctx.moveTo(f.x,f.y);ctx.arc(f.x,f.y,f.r,0,Math.PI*2,true);}ctx.fill();moveSnowflakes();}
-function moveSnowflakes(){let angle=0;angle+=0.001;for(const f of snowflakes){f.y+=Math.pow(f.d,2)+1;f.x+=Math.sin(angle)*2;if(f.y>height){f.y=0;f.x=Math.random()*width;}}}
-function drawSparkles(){for(const s of sparkles){ctx.beginPath();ctx.fillStyle=`rgba(255,255,255,${s.alpha})`;ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();s.y-=s.speedY;s.x+=s.speedX;if(s.y<0){s.y=height;s.x=Math.random()*width;}}}
-function animateParticles(){drawSnowflakes();drawSparkles();requestAnimationFrame(animateParticles);}
-window.addEventListener('resize',()=>{resizeCanvas();createSnowflakes();createSparkles();});
-resizeCanvas();createSnowflakes();createSparkles();animateParticles();
+// --- Snow Animation ---
+const canvas = document.getElementById('snowCanvas');
+const ctx = canvas.getContext('2d');
+let width, height, snowflakes = [], sparkles = [];
 
-// --- Wake Up ---
-let progress=0,holdInterval=null,decayInterval=null;
-const wakeScreen=document.getElementById('wakeScreen');
-const instructionsScreen=document.getElementById('instructionsScreen');
-const gameScreen=document.getElementById('gameScreen');
-const characterWrapper=document.getElementById('characterWrapper');
-const character=document.getElementById('character');
-const sleepZs=document.querySelectorAll('.sleepZ');
-const progressBar=document.getElementById('progressBar');
-const progressText=document.getElementById('progressText');
-const progressContainer=document.getElementById('progressContainer');
-const holdToWakeImage=document.getElementById('holdToWakeImage');
-const wakeImg="https://i.imgur.com/LzmWDzp.png";
-
-function showSleepZ(show){sleepZs.forEach(z=>z.style.display=show?'block':'none');}
-function updateProgressBar(){progressBar.style.width=progress+'%';progressText.textContent=progress+'%';}
-
-character.addEventListener('mousedown',startHold);
-character.addEventListener('touchstart',startHold);
-character.addEventListener('mouseup',stopHold);
-character.addEventListener('mouseleave',stopHold);
-character.addEventListener('touchend',stopHold);
-
-function startHold(e){
-  e.preventDefault();
-  characterWrapper.classList.add('activeTouch');
-  showSleepZ(true);
-  progressContainer.style.display='block';
-  holdToWakeImage.style.display='block';
-  clearInterval(holdInterval);clearInterval(decayInterval);
-  holdInterval=setInterval(()=>{
-    if(progress<100){progress+=2;if(progress>100)progress=100;updateProgressBar();}
-    if(progress>=100){
-      clearInterval(holdInterval);
-      showSleepZ(false);
-      character.src=wakeImg;
-      progressContainer.style.display='none';
-      holdToWakeImage.style.display='none';
-      characterWrapper.classList.remove('activeTouch');
-      setTimeout(showInstructions,500);
+function resizeCanvas() {
+    width = canvas.width = window.innerWidth;
+    height = canvas.height = window.innerHeight;
+}
+function createSnowflakes() {
+    snowflakes = [];
+    for (let i = 0; i < 150; i++) {
+        snowflakes.push({ x: Math.random() * width, y: Math.random() * height, r: Math.random() * 4 + 1, d: Math.random() * 0.5 + 0.5 });
     }
-  },100);
+}
+function createSparkles() {
+    sparkles = [];
+    for (let i = 0; i < 50; i++) {
+        sparkles.push({ x: Math.random() * width, y: height + Math.random() * height, r: Math.random() * 2 + 1, alpha: Math.random() * 0.5 + 0.5, speedY: Math.random() * 0.5 + 0.2, speedX: (Math.random() - 0.5) * 0.3 });
+    }
+}
+function drawSnowflakes() {
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = 'white';
+    ctx.beginPath();
+    for (const f of snowflakes) {
+        ctx.moveTo(f.x, f.y);
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2, true);
+    }
+    ctx.fill();
+    moveSnowflakes();
+}
+function moveSnowflakes() {
+    let angle = 0;
+    angle += 0.001;
+    for (const f of snowflakes) {
+        f.y += Math.pow(f.d, 2) + 1;
+        f.x += Math.sin(angle) * 2;
+        if (f.y > height) { f.y = 0; f.x = Math.random() * width; }
+    }
+}
+function drawSparkles() {
+    for (const s of sparkles) {
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(255,255,255,${s.alpha})`;
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+        s.y -= s.speedY;
+        s.x += s.speedX;
+        if (s.y < 0) { s.y = height; s.x = Math.random() * width; }
+    }
+}
+function animateParticles() {
+    drawSnowflakes();
+    drawSparkles();
+    requestAnimationFrame(animateParticles);
 }
 
-function stopHold(){clearInterval(holdInterval);clearInterval(decayInterval);characterWrapper.classList.remove('activeTouch');decayInterval=setInterval(()=>{if(progress>0&&progress<100){progress-=2;if(progress<0)progress=0;updateProgressBar();}else{clearInterval(decayInterval);}},100);}
+window.addEventListener('resize', () => { resizeCanvas(); createSnowflakes(); createSparkles(); });
+resizeCanvas(); createSnowflakes(); createSparkles(); animateParticles();
+
+// --- Wake & Progress ---
+let progress = 0, holdInterval = null, decayInterval = null;
+const wakeScreen = document.getElementById('wakeScreen');
+const instructionsScreen = document.getElementById('instructionsScreen');
+const gameScreen = document.getElementById('gameScreen');
+const characterWrapper = document.getElementById('characterWrapper');
+const character = document.getElementById('character');
+const sleepZs = document.querySelectorAll('.sleepZ');
+const progressBar = document.getElementById('progressBar');
+const progressText = document.getElementById('progressText');
+const progressContainer = document.getElementById('progressContainer');
+const holdToWakeImage = document.getElementById('holdToWakeImage');
+const wakeImg = "https://i.imgur.com/LzmWDzp.png";
+
+function showSleepZ(show) { sleepZs.forEach(z => z.style.display = show ? 'block' : 'none'); }
+function updateProgressBar() { progressBar.style.width = progress + '%'; progressText.textContent = progress + '%'; }
+
+character.addEventListener('mousedown', startHold);
+character.addEventListener('touchstart', startHold);
+character.addEventListener('mouseup', stopHold);
+character.addEventListener('mouseleave', stopHold);
+character.addEventListener('touchend', stopHold);
+
+function startHold(e) {
+    e.preventDefault();
+    characterWrapper.classList.add('activeTouch');
+    showSleepZ(true);
+    progressContainer.style.display = 'block';
+    holdToWakeImage.style.display = 'block';
+    clearInterval(holdInterval); clearInterval(decayInterval);
+    holdInterval = setInterval(() => {
+        if (progress < 100) { progress += 2; if (progress > 100) progress = 100; updateProgressBar(); }
+        if (progress >= 100) {
+            clearInterval(holdInterval);
+            showSleepZ(false);
+            character.src = wakeImg;
+            progressContainer.style.display = 'none';
+            holdToWakeImage.style.display = 'none';
+            characterWrapper.classList.remove('activeTouch');
+            setTimeout(showInstructions, 500);
+        }
+    }, 100);
+}
+
+function stopHold() {
+    clearInterval(holdInterval); clearInterval(decayInterval);
+    characterWrapper.classList.remove('activeTouch');
+    decayInterval = setInterval(() => {
+        if (progress > 0 && progress < 100) { progress -= 2; if (progress < 0) progress = 0; updateProgressBar(); } else { clearInterval(decayInterval); }
+    }, 100);
+}
 
 // --- Show Instructions ---
-function showInstructions(){
-  wakeScreen.classList.remove('active');
-  instructionsScreen.classList.add('active');
+function showInstructions() {
+    wakeScreen.classList.remove('active');
+    instructionsScreen.classList.add('active');
 }
-
-document.getElementById('startGameBtn').addEventListener('click',()=>{
-  instructionsScreen.classList.remove('active');
-  gameScreen.classList.add('active');
-  initGameGrid();
-  updateHUD();
-  showRoundPopup();
+document.getElementById('startGameBtn').addEventListener('click', () => {
+    instructionsScreen.classList.remove('active');
+    gameScreen.classList.add('active');
+    initGameGrid();
+    updateHUD();
+    showRoundPopup();
 });
 
-// --- Game Grid & Logic ---
-const images=[
-'https://i.postimg.cc/HLQtJ8wc/processed-image-9.png',
-'https://i.postimg.cc/FHkp4B1x/greeen2.png',
-'https://i.postimg.cc/XvM87kC6/processed-image-8.png'
+// --- Game Grid ---
+const images = [
+    'https://i.postimg.cc/HLQtJ8wc/processed-image-9.png',
+    'https://i.postimg.cc/FHkp4B1x/greeen2.png',
+    'https://i.postimg.cc/XvM87kC6/processed-image-8.png'
 ];
-let grid=[], revealed=[], counts={gold:0,green:0,red:0}, gameOver=false;
-const message=document.getElementById('message');
-const restartBtn=document.getElementById('restartBtn');
-const roundPopup=document.getElementById('roundPopup');
-const tracker=document.querySelectorAll('.tracker-circle');
+let grid = [], revealed = [], counts = { gold: 0, green: 0, red: 0 }, gameOver = false;
+const message = document.getElementById('message');
+const restartBtn = document.getElementById('restartBtn');
+const roundPopup = document.getElementById('roundPopup');
+const tracker = document.querySelectorAll('.tracker-circle');
 
-// --- Rounds & Score ---
-let round=1,totalRounds=5,totalScore=0,recordScore=localStorage.getItem('recordScore')?parseInt(localStorage.getItem('recordScore')):0;
-const scoreHUD=document.getElementById('scoreHUD');
-function updateHUD(){scoreHUD.textContent=`Round: ${round}/${totalRounds} | Total: ${totalScore} | Record: ${recordScore}`;}
-
-// --- Popup ---
-function showRoundPopup(){roundPopup.textContent=`Round ${round}`;roundPopup.style.opacity='1';setTimeout(()=>{roundPopup.style.opacity='0';},1000);}
+// --- Score & Rounds ---
+let round = 1, totalRounds = 5, totalScore = 0, recordScore = localStorage.getItem('recordScore') ? parseInt(localStorage.getItem('recordScore')) : 0;
+const scoreHUD = document.getElementById('scoreHUD');
+function updateHUD() { scoreHUD.textContent = `Round: ${round}/${totalRounds} | Total: ${totalScore} | Record: ${recordScore}`; }
+function showRoundPopup() { roundPopup.textContent = `Round ${round}`; roundPopup.style.opacity = '1'; setTimeout(() => { roundPopup.style.opacity = '0'; }, 1000); }
 
 // --- Grid Init ---
-function initGameGrid(){
-  const gameGrid=document.getElementById('gameGrid');gameGrid.innerHTML='';grid=[];revealed=[];counts={gold:0,green:0,red:0};gameOver=false;message.textContent='';restartBtn.style.display='none';restartBtn.classList.remove('restart-green','restart-gold','restart-red');
-  const positions=shuffle(Array.from({length:12},(_,i)=>i));
-  ['gold','green','red'].forEach((type,i)=>{for(let j=0;j<4;j++){const pos=positions.pop();grid[pos]={type,img:images[i]};}});
-  for(let i=0;i<12;i++){const cell=document.createElement('div');cell.className='cell';cell.dataset.index=i;cell.addEventListener('click',()=>revealCell(i));gameGrid.appendChild(cell);}
-  updateHUD();
-}
-
-function shuffle(array){for(let i=array.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[array[i],array[j]]=[array[j],array[i]];}return array;}
-
-function revealCell(index){
-  if(revealed.includes(index)||gameOver)return;
-  revealed.push(index);
-  const cell=document.querySelector(`.cell[data-index="${index}"]`);
-  const {type,img}=grid[index];cell.innerHTML='';const imageElem=document.createElement('img');imageElem.src=img;cell.appendChild(imageElem);
-  if(type==='gold')cell.classList.add('glow-gold');if(type==='green')cell.classList.add('glow-green');if(type==='red')cell.classList.add('glow-red');
-  counts[type]++;
-  if(counts['gold']>=3){
-    message.innerHTML='<span class="ticker-gold">🌟 GOLDEN RAID!</span>';gameOver=true;addScore(1250);showRestart('gold');tracker[round-1].className='tracker-circle active gold';
-  } 
-  else if(counts['green']>=3){
-    message.innerHTML='<span class="ticker-green">✅ GOOD RAID!</span>';gameOver=true;addScore(750);showRestart('green');tracker[round-1].className='tracker-circle active green';
-  } 
-  else if(counts['red']>=3){
-    message.innerHTML='<span class="ticker-red">❌ BAD RAID</span>';gameOver=true;addScore(450);showRestart('red');tracker[round-1].className='tracker-circle active red';
-  }
-}
-
-function addScore(points){totalScore+=points;if(totalScore>recordScore){recordScore=totalScore;localStorage.setItem('recordScore',recordScore);}updateHUD();}
-function showRestart(type){restartBtn.style.display='block';restartBtn.classList.remove('restart-green','restart-gold','restart-red');if(type==='green')restartBtn.classList.add('restart-green');else if(type==='gold')restartBtn.classList.add('restart-gold');else if(type==='red')restartBtn.classList.add('restart-red');restartBtn.textContent=(round<totalRounds)?'Next Round':'Play Again';}
-
-// --- Leaderboard Setup ---
-let localScores = [];
-let leaderboardContainer = document.getElementById('leaderboardContainer');
-if(!leaderboardContainer){
-  leaderboardContainer = document.createElement('div');
-  leaderboardContainer.id = 'leaderboardContainer';
-  leaderboardContainer.style.cssText = `
-    position:absolute;
-    top:10px;
-    right:10px;
-    background: rgba(0,0,0,0.5);
-    padding: 10px;
-    border-radius: 10px;
-    color: white;
-    font-weight: bold;
-    z-index: 50;
-    font-size: 1rem;
-    max-width: 180px;
-  `;
-  gameScreen.appendChild(leaderboardContainer);
-}
-
-// --- Update local leaderboard display ---
-function updateLocalLeaderboard(highlightEntry=null){
-  localScores.sort((a,b)=>b.score - a.score);
-  const top5 = localScores.slice(0,5);
-  leaderboardContainer.innerHTML = "<strong>🏆 TOP 5</strong><br>";
-  top5.forEach((entry,i)=>{
-    let emoji = i===0?'🥇':i===1?'🥈':i===2?'🥉':'⭐';
-    let line = document.createElement('div');
-    line.textContent = `${emoji} ${entry.name}: ${entry.score}`;
-    if(highlightEntry && entry === highlightEntry) line.style.color = 'yellow';
-    leaderboardContainer.appendChild(line);
-  });
-}
-
-// --- Fetch leaderboard from Dreamlo (JSON) ---
-async function fetchDreamloLeaderboard(){
-  try {
-    const res = await fetch('http://dreamlo.com/lb/68a7430e8f40bb12e06fd910/json');
-    const data = await res.json();
-    if(data && data.dreamlo && data.dreamlo.leaderboard && data.dreamlo.leaderboard.entry){
-      localScores = data.dreamlo.leaderboard.entry.map(e=>({
-        name: e.name,
-        score: parseInt(e.score)
-      }));
-    } else {
-      localScores = [];
+function initGameGrid() {
+    const gameGrid = document.getElementById('gameGrid'); gameGrid.innerHTML = '';
+    grid = []; revealed = []; counts = { gold: 0, green: 0, red: 0 }; gameOver = false;
+    message.textContent = ''; restartBtn.style.display = 'none'; restartBtn.classList.remove('restart-green', 'restart-gold', 'restart-red');
+    const positions = shuffle(Array.from({ length: 12 }, (_, i) => i));
+    ['gold', 'green', 'red'].forEach((type, i) => { for (let j = 0; j < 4; j++) { const pos = positions.pop(); grid[pos] = { type, img: images[i] }; } });
+    for (let i = 0; i < 12; i++) {
+        const cell = document.createElement('div'); cell.className = 'cell'; cell.dataset.index = i;
+        cell.addEventListener('click', () => revealCell(i)); gameGrid.appendChild(cell);
     }
-    updateLocalLeaderboard();
-  } catch(e){
-    console.error("Error fetching Dreamlo leaderboard", e);
-    localScores = [];
-    updateLocalLeaderboard();
-  }
+    updateHUD();
+}
+function shuffle(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
+
+function revealCell(index) {
+    if (revealed.includes(index) || gameOver) return;
+    revealed.push(index);
+    const cell = document.querySelector(`.cell[data-index="${index}"]`);
+    const { type, img } = grid[index]; cell.innerHTML = ''; const imageElem = document.createElement('img'); imageElem.src = img; cell.appendChild(imageElem);
+    if (type === 'gold') cell.classList.add('glow-gold'); if (type === 'green') cell.classList.add('glow-green'); if (type === 'red') cell.classList.add('glow-red');
+    counts[type]++;
+    if (counts['gold'] >= 3) { message.innerHTML = '<span class="ticker-gold">🌟 GOLDEN RAID!</span>'; gameOver = true; addScore(1250); showRestart('gold'); tracker[round - 1].className = 'tracker-circle active gold'; }
+    else if (counts['green'] >= 3) { message.innerHTML = '<span class="ticker-green">✅ GOOD RAID!</span>'; gameOver = true; addScore(750); showRestart('green'); tracker[round - 1].className = 'tracker-circle active green'; }
+    else if (counts['red'] >= 3) { message.innerHTML = '<span class="ticker-red">❌ BAD RAID</span>'; gameOver = true; addScore(450); showRestart('red'); tracker[round - 1].className = 'tracker-circle active red'; }
 }
 
-// --- Submit score to Dreamlo ---
-function submitScoreToDreamlo(playerName, score){
-  // use your provided add link format
-  const url = `http://dreamlo.com/lb/poaoFfRcok-VaXb0hOZe7QV1BvuQhuHEig4EMFIAyDjg/add/${encodeURIComponent(playerName)}/${score}`;
-  fetch(url)
-    .then(()=> fetchDreamloLeaderboard()) // refresh after add
-    .then(()=>{
-      alert(`✅ Score uploaded successfully for ${playerName}: ${score}`);
-      localScores.push({name: playerName, score: score});
-      updateLocalLeaderboard({name: playerName, score: score});
-    })
-    .catch(()=> {
-      alert(`⚠️ Could not upload score. Check your Dreamlo links.`);
-      localScores.push({name: playerName, score: score});
-      updateLocalLeaderboard({name: playerName, score: score});
+function addScore(points) { totalScore += points; if (totalScore > recordScore) { recordScore = totalScore; localStorage.setItem('recordScore', recordScore); } updateHUD(); }
+function showRestart(type) { restartBtn.style.display = 'block'; restartBtn.classList.remove('restart-green', 'restart-gold', 'restart-red'); if (type === 'green') restartBtn.classList.add('restart-green'); else if (type === 'gold') restartBtn.classList.add('restart-gold'); else if (type === 'red') restartBtn.classList.add('restart-red'); restartBtn.textContent = (round < totalRounds) ? 'Next Round' : 'Play Again'; }
+
+// --- Dreamlo Leaderboard ---
+const dreamloPrivateKey = "poaoFfRcok-VaXb0hOZe7QV1BvuQhuHEig4EMFIAyDjg";
+const dreamloPublicKey = "68a7430e8f40bb12e06fd910";
+let localScores = [];
+
+let leaderboardContainer = document.getElementById('leaderboardContainer');
+if (!leaderboardContainer) {
+    leaderboardContainer = document.createElement('div'); leaderboardContainer.id = 'leaderboardContainer';
+    leaderboardContainer.style.cssText = `
+        position:absolute; top:10px; right:10px; background:rgba(0,0,0,0.5);
+        padding:10px; border-radius:10px; color:white; font-weight:bold; z-index:50; font-size:1rem; max-width:150px;
+    `;
+    gameScreen.appendChild(leaderboardContainer);
+}
+
+function updateLocalLeaderboard(newEntry = null, highlight = false) {
+    if (newEntry) localScores.push(newEntry);
+    localScores.sort((a, b) => b.score - a.score);
+    const top5 = localScores.slice(0, 5);
+    leaderboardContainer.innerHTML = "<strong>🏆 TOP 5</strong><br>";
+    top5.forEach((e, i) => {
+        const emoji = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '⭐';
+        const div = document.createElement('div');
+        div.textContent = `${emoji} ${e.name}: ${e.score}`;
+        if (highlight && e === newEntry) div.style.color = 'yellow';
+        leaderboardContainer.appendChild(div);
     });
 }
 
-// --- Trigger after 5/5 rounds ---
-restartBtn.addEventListener('click',()=>{
-  if(round<totalRounds){
-    round++; initGameGrid(); showRoundPopup();
-  } else {
-    const playerName = prompt("Game Over! Enter your name for leaderboard:","Player");
-    if(playerName) submitScoreToDreamlo(playerName,totalScore);
-    round=1; totalScore=0; tracker.forEach(c=>c.className='tracker-circle'); initGameGrid(); showRoundPopup();
-  }
-});
+async function fetchDreamloLeaderboard() {
+    try {
+        const res = await fetch(`https://dreamlo.com/lb/${dreamloPublicKey}/json`);
+        const data = await res.json();
+        localScores = [];
+        const entries = data?.dreamlo?.leaderboard?.entry || [];
+        entries.forEach(e => updateLocalLeaderboard({ name: e.name, score: parseInt(e.score) }));
+    } catch (err) { console.error("Error fetching leaderboard:", err); }
+}
 
-// --- Fetch leaderboard on game start ---
+async function submitScoreToDreamlo(name, score) {
+    try {
+        await fetch(`https://dreamlo.com/lb/${dreamloPrivateKey}/add/${encodeURIComponent(name)}/${score}`);
+        updateLocalLeaderboard({ name, score }, true);
+        fetchDreamloLeaderboard();
+        alert("Score uploaded to Dreamlo!");
+    } catch (err) { console.error("Error submitting score:", err); alert("Could not upload score!"); }
+}
+
 fetchDreamloLeaderboard();
+
+// --- Next Round ---
+restartBtn.addEventListener('click', () => {
+    if (round < totalRounds) {
+        round++; initGameGrid(); showRoundPopup();
+    } else {
+        const playerName = prompt("Game Over! Enter your name for leaderboard:", "Player");
+        if (playerName) submitScoreToDreamlo(playerName, totalScore);
+        round = 1; totalScore = 0; tracker.forEach(c => c.className = 'tracker-circle'); initGameGrid(); showRoundPopup();
+    }
+});
 </script>
 </body>
 </html>
