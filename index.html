@@ -281,12 +281,11 @@ function revealCell(index){
 function addScore(points){totalScore+=points;if(totalScore>recordScore){recordScore=totalScore;localStorage.setItem('recordScore',recordScore);}updateHUD();}
 function showRestart(type){restartBtn.style.display='block';restartBtn.classList.remove('restart-green','restart-gold','restart-red');if(type==='green')restartBtn.classList.add('restart-green');else if(type==='gold')restartBtn.classList.add('restart-gold');else if(type==='red')restartBtn.classList.add('restart-red');restartBtn.textContent=(round<totalRounds)?'Next Round':'Play Again';}
 
-// --- Dreamlo Leaderboard ---
+// --- Dreamlo Keys ---
 const dreamloPublicKey = "68a7430e8f40bb12e06fd910";
 const dreamloPrivateKey = "poaoFfRcok-VaXb0hOZe7QV1BvuQhuHEig4EMFIAyDjg";
-const dreamloReadLink = `https://dreamlo.com/lb/${dreamloPublicKey}/json`;
-const dreamloAddLinkBase = `https://dreamlo.com/lb/${dreamloPrivateKey}/add/`;
 
+// --- Local Scores ---
 let localScores = [];
 
 // --- Leaderboard DOM ---
@@ -305,13 +304,14 @@ if(!leaderboardContainer){
     font-weight: bold;
     z-index: 50;
     font-size: 1rem;
-    max-width: 150px;
+    max-width: 180px;
   `;
   gameScreen.appendChild(leaderboardContainer);
 }
 
 // --- Update Local Leaderboard ---
 function updateLocalLeaderboard(highlightEntry=null){
+  // Sort and keep top 5
   localScores.sort((a,b)=>b.score - a.score);
   const top5 = localScores.slice(0,5);
 
@@ -325,7 +325,7 @@ function updateLocalLeaderboard(highlightEntry=null){
   });
 }
 
-// --- Fetch Dreamlo Leaderboard (all historical entries) ---
+// --- Fetch all historical entries from Dreamlo ---
 async function fetchDreamloLeaderboard(){
   try{
     const res = await fetch(`https://dreamlo.com/lb/${dreamloPublicKey}/json`);
@@ -335,26 +335,23 @@ async function fetchDreamloLeaderboard(){
     entries.forEach(e=>{
       localScores.push({name: e.name, score: parseInt(e.score)});
     });
-    // Sort and display top 5
-    updateLocalLeaderboard();
+    updateLocalLeaderboard(); // show top 5 immediately
   }catch(e){ console.error("Error fetching Dreamlo leaderboard", e);}
 }
 
-// --- Submit Score to Dreamlo ---
+// --- Submit new score to Dreamlo ---
 async function submitScoreToDreamlo(name, score){
   try{
     const url = `https://dreamlo.com/lb/${dreamloPrivateKey}/add/${encodeURIComponent(name)}/${score}`;
     await fetch(url);
-    // Add locally & highlight
     const newEntry = {name, score};
-    localScores.push(newEntry);
-    updateLocalLeaderboard(newEntry);
-    // Refresh from server to ensure all historical entries are included
-    fetchDreamloLeaderboard();
+    localScores.push(newEntry); // update local array
+    updateLocalLeaderboard(newEntry); // highlight new score
+    fetchDreamloLeaderboard(); // refresh from server to include all historical entries
   }catch(e){ console.error("Error submitting Dreamlo", e);}
 }
 
-// --- Fetch leaderboard immediately on load ---
+// --- Fetch leaderboard immediately on page load ---
 fetchDreamloLeaderboard();
 
 // --- Next Round Handler ---
