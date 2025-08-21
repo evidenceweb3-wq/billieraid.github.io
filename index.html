@@ -282,21 +282,23 @@ function addScore(points){totalScore+=points;if(totalScore>recordScore){recordSc
 function showRestart(type){restartBtn.style.display='block';restartBtn.classList.remove('restart-green','restart-gold','restart-red');if(type==='green')restartBtn.classList.add('restart-green');else if(type==='gold')restartBtn.classList.add('restart-gold');else if(type==='red')restartBtn.classList.add('restart-red');restartBtn.textContent=(round<totalRounds)?'Next Round':'Play Again';}
 
 // --- Next Round ---
-restartBtn.addEventListener('click',()=>{
-  if(round<totalRounds){
-    round++; 
-    initGameGrid(); 
+restartBtn.addEventListener('click', () => {
+  if(gameOver){ // Only submit after a round win
+    let playerName = prompt("Enter your name for the leaderboard:");
+    if(playerName){
+      submitScore(playerName, totalScore);
+    }
+  }
+
+  if(round < totalRounds){
+    round++;
+    initGameGrid();
     showRoundPopup();
   } else {
-    // End of game
-    let playerName = prompt("Enter your name:");
-    if(playerName){
-      submitScore(playerName, totalScore); // Send score
-    }
-    round=1; 
-    totalScore=0; 
-    tracker.forEach(c=>c.className='tracker-circle'); 
-    initGameGrid(); 
+    round = 1;
+    totalScore = 0;
+    tracker.forEach(c => c.className = 'tracker-circle');
+    initGameGrid();
     showRoundPopup();
   }
 });
@@ -328,11 +330,12 @@ function loadLeaderboard() {
 }
 
 function submitScore(name, score) {
-  fetch("https://api.allorigins.win/get?url=" + encodeURIComponent(`http://dreamlo.com/lb/YjalU2-3Yk6RIoRqxNh4JQ3Kq0lO0E_US39f8jV27Y-A/add/${name}/${score}`))
-    .then(res => res.json())
+  // Direct HTTPS to Dreamlo for adding score (works on GitHub Pages)
+  fetch(`https://dreamlo.com/lb/YjalU2-3Yk6RIoRqxNh4JQ3Kq0lO0E_US39f8jV27Y-A/add/${name}/${score}`)
+    .then(res => res.text()) // Dreamlo returns plain text for add
     .then(() => {
       console.log("Score submitted!");
-      loadLeaderboard(); // refresh leaderboard after adding
+      loadLeaderboard(); // refresh leaderboard immediately
     })
     .catch(err => console.error("Error adding score:", err));
 }
