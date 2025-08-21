@@ -131,7 +131,7 @@ html,body{height:100%;font-family:Arial,sans-serif;overflow:hidden;background: l
     <button id="startGameBtn" style="padding:15px 25px;font-size:1.2rem;font-weight:bold;border:none;border-radius:10px;cursor:pointer;">I Understand</button>
   </div>
 </div>
-
+  
 <!-- GAME SCREEN -->
 <div id="gameScreen" class="screen">
   <img id="gameTitle" src="https://i.postimg.cc/fLws0X9J/billieraid.png" alt="Game Title">
@@ -231,9 +231,9 @@ document.getElementById('startGameBtn').addEventListener('click',()=>{
 
 // --- Game Grid & Logic ---
 const images=[
-'https://i.postimg.cc/HLQtJ8wc/processed-image-9.png', // GOLD
-'https://i.postimg.cc/FHkp4B1x/greeen2.png',         // GREEN
-'https://i.postimg.cc/XvM87kC6/processed-image-8.png' // RED
+'https://i.postimg.cc/HLQtJ8wc/processed-image-9.png',
+'https://i.postimg.cc/FHkp4B1x/greeen2.png',
+'https://i.postimg.cc/XvM87kC6/processed-image-8.png'
 ];
 let grid=[], revealed=[], counts={gold:0,green:0,red:0}, gameOver=false;
 const message=document.getElementById('message');
@@ -281,10 +281,93 @@ function revealCell(index){
 function addScore(points){totalScore+=points;if(totalScore>recordScore){recordScore=totalScore;localStorage.setItem('recordScore',recordScore);}updateHUD();}
 function showRestart(type){restartBtn.style.display='block';restartBtn.classList.remove('restart-green','restart-gold','restart-red');if(type==='green')restartBtn.classList.add('restart-green');else if(type==='gold')restartBtn.classList.add('restart-gold');else if(type==='red')restartBtn.classList.add('restart-red');restartBtn.textContent=(round<totalRounds)?'Next Round':'Play Again';}
 
-// --- Next Round ---
+// --- Dreamlo Leaderboard ---
+const dreamloPublicKey = "68a7430e8f40bb12e06fd910";
+const dreamloPrivateKey = "poaoFfRcok-VaXb0hOZe7QV1BvuQhuHEig4EMFIAyDjg";
+const dreamloReadLink = `https://dreamlo.com/lb/${dreamloPublicKey}/json`;
+const dreamloAddLinkBase = `https://dreamlo.com/lb/${dreamloPrivateKey}/add/`;
+
+let localScores = [];
+
+// --- Leaderboard DOM ---
+let leaderboardContainer = document.getElementById('leaderboardContainer');
+if(!leaderboardContainer){
+  leaderboardContainer = document.createElement('div');
+  leaderboardContainer.id = 'leaderboardContainer';
+  leaderboardContainer.style.cssText = `
+    position:absolute;
+    top:10px;
+    right:10px;
+    background: rgba(0,0,0,0.5);
+    padding: 10px;
+    border-radius: 10px;
+    color: white;
+    font-weight: bold;
+    z-index: 50;
+    font-size: 1rem;
+    max-width: 150px;
+  `;
+  gameScreen.appendChild(leaderboardContainer);
+}
+
+// --- Update Local Leaderboard ---
+function updateLocalLeaderboard(newScoreEntry=null, highlight=false){
+  if(newScoreEntry) localScores.push(newScoreEntry);
+  localScores.sort((a,b)=>b.score - a.score);
+  const top5 = localScores.slice(0,5);
+
+  leaderboardContainer.innerHTML = "<strong>🏆 TOP 5</strong><br>";
+  top5.forEach((entry,i)=>{
+    let emoji = i===0?'🥇':i===1?'🥈':i===2?'🥉':'⭐';
+    let line = document.createElement('div');
+    line.textContent = `${emoji} ${entry.name}: ${entry.score}`;
+    if(highlight && entry === newScoreEntry) line.style.color = 'yellow';
+    leaderboardContainer.appendChild(line);
+  });
+}
+
+// --- Fetch Dreamlo Leaderboard ---
+async function fetchDreamloLeaderboard(){
+  try{
+    const res = await fetch(`https://dreamlo.com/lb/${dreamloPublicKey}/json`);
+    const data = await res.json();
+    localScores = [];
+    const entries = data?.dreamlo?.leaderboard?.entry || [];
+    entries.forEach(e=>{
+      updateLocalLeaderboard({name: e.name, score: parseInt(e.score)});
+    });
+  }catch(e){ console.error("Error fetching Dreamlo leaderboard", e);}
+}
+
+// --- Submit Score to Dreamlo ---
+async function submitScoreToDreamlo(name, score){
+  try{
+    const url = `https://dreamlo.com/lb/${dreamloPrivateKey}/add/${encodeURIComponent(name)}/${score}`;
+    await fetch(url);
+    updateLocalLeaderboard({name, score}, true);
+    fetchDreamloLeaderboard(); // refresh top 5
+  }catch(e){ console.error("Error submitting Dreamlo", e);}
+}
+
+// --- Fetch leaderboard immediately on load ---
+fetchDreamloLeaderboard();
+
+// --- Next Round Handler ---
 restartBtn.addEventListener('click',()=>{
-  if(round<totalRounds){round++; initGameGrid(); showRoundPopup();} 
-  else {round=1; totalScore=0; tracker.forEach(c=>c.className='tracker-circle'); initGameGrid(); showRoundPopup();}
+  if(round < totalRounds){
+    round++;
+    initGameGrid();
+    showRoundPopup();
+  } else {
+    // 5/5 rounds completed
+    const playerName = prompt("Game Over! Enter your name for leaderboard:", "Player");
+    if(playerName) submitScoreToDreamlo(playerName, totalScore);
+    round = 1;
+    totalScore = 0;
+    tracker.forEach(c => c.className='tracker-circle');
+    initGameGrid();
+    showRoundPopup();
+  }
 });
 </script>
 </body>
