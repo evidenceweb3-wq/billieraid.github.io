@@ -303,6 +303,7 @@ if(!leaderboardContainer){
   gameScreen.appendChild(leaderboardContainer);
 }
 
+// --- Update local leaderboard display ---
 function updateLocalLeaderboard(highlightEntry=null){
   localScores.sort((a,b)=>b.score - a.score);
   const top5 = localScores.slice(0,5);
@@ -316,63 +317,46 @@ function updateLocalLeaderboard(highlightEntry=null){
   });
 }
 
-// --- Replace with your actual Dreamlo keys ---
-const PUBLIC_KEY = "68a7430e8f40bb12e06fd910";  // your public key
-const PRIVATE_KEY = "poaoFfRcok-VaXb0hOZe7QV1BvuQhuHEig4EMFIAyDjg";  // your private key
-
+// --- Fetch leaderboard from Dreamlo (JSON) ---
 async function fetchDreamloLeaderboard(){
   try {
-    const res = await fetch(`http://dreamlo.com/lb/${PUBLIC_KEY}/xml`);
-    const text = await res.text();
-    const parser = new DOMParser();
-    const xml = parser.parseFromString(text,"application/xml");
-    const entries = Array.from(xml.querySelectorAll("dreamlo > leaderboard > entry"));
-    localScores = entries.map(e=>({
-      name: e.querySelector("name").textContent,
-      score: parseInt(e.querySelector("score").textContent)
-    }));
+    const res = await fetch('http://dreamlo.com/lb/68a7430e8f40bb12e06fd910/json');
+    const data = await res.json();
+    if(data && data.dreamlo && data.dreamlo.leaderboard && data.dreamlo.leaderboard.entry){
+      localScores = data.dreamlo.leaderboard.entry.map(e=>({
+        name: e.name,
+        score: parseInt(e.score)
+      }));
+    } else {
+      localScores = [];
+    }
     updateLocalLeaderboard();
-  } catch(e) {
-    console.warn("Unable to fetch Dreamlo leaderboard (likely CORS). Using local fallback.");
-    // optional: pre-fill with dummy data for local testing
-    localScores = [
-      {name:"AAA", score:1250},
-      {name:"BBB", score:1000},
-      {name:"CCC", score:750}
-    ];
+  } catch(e){
+    console.error("Error fetching Dreamlo leaderboard", e);
+    localScores = [];
     updateLocalLeaderboard();
   }
 }
 
+// --- Submit score to Dreamlo ---
 function submitScoreToDreamlo(playerName, score){
-  const url = `http://dreamlo.com/lb/${PRIVATE_KEY}/add/${encodeURIComponent(playerName)}/${score}`;
+  // use your provided add link format
+  const url = `http://dreamlo.com/lb/poaoFfRcok-VaXb0hOZe7QV1BvuQhuHEig4EMFIAyDjg/add/${encodeURIComponent(playerName)}/${score}`;
   fetch(url)
+    .then(()=> fetchDreamloLeaderboard()) // refresh after add
     .then(()=>{
-      // verify upload
-      fetch(`http://dreamlo.com/lb/${PUBLIC_KEY}/xml`)
-        .then(res => res.text())
-        .then(text => {
-          const parser = new DOMParser();
-          const xml = parser.parseFromString(text,"application/xml");
-          const entries = Array.from(xml.querySelectorAll("dreamlo > leaderboard > entry"));
-          const found = entries.some(e => e.querySelector("name").textContent === playerName &&
-                                           parseInt(e.querySelector("score").textContent) === score);
-          if(found){
-            alert(`✅ Score uploaded successfully for ${playerName}: ${score}`);
-          } else {
-            alert(`⚠️ Score could not be verified on Dreamlo. (If testing locally, ignore)`);
-          }
-          localScores.push({name: playerName, score: score});
-          updateLocalLeaderboard({name: playerName, score: score});
-        });
+      alert(`✅ Score uploaded successfully for ${playerName}: ${score}`);
+      localScores.push({name: playerName, score: score});
+      updateLocalLeaderboard({name: playerName, score: score});
     })
-    .catch(err => {console.warn("Dreamlo submit failed (likely CORS). Score stored locally."); 
-      localScores.push({name: playerName, score: score}); 
+    .catch(()=> {
+      alert(`⚠️ Could not upload score. Check your Dreamlo links.`);
+      localScores.push({name: playerName, score: score});
       updateLocalLeaderboard({name: playerName, score: score});
     });
 }
 
-// --- Next Round Trigger ---
+// --- Trigger after 5/5 rounds ---
 restartBtn.addEventListener('click',()=>{
   if(round<totalRounds){
     round++; initGameGrid(); showRoundPopup();
@@ -383,7 +367,7 @@ restartBtn.addEventListener('click',()=>{
   }
 });
 
-// --- Fetch leaderboard on start ---
+// --- Fetch leaderboard on game start ---
 fetchDreamloLeaderboard();
 </script>
 </body>
