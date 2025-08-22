@@ -345,23 +345,29 @@ function addScoreToDreamlo(name, score){
 }
 
 // Read top 10 from Dreamlo
-function updateLeaderboard() {
-    fetch(`https://YOUR_PROXY_URL/your-dreamlo-key/json`)
-        .then(res => res.json())
-        .then(data => {
-            const list = document.getElementById('leaderboardList');
-            list.innerHTML = "";
-
-            const emojis = ["🥇", "🥈", "🥉"];
-
-            data.dreamlo.leaderboard.entry.slice(0, 10).forEach((entry, index) => {
-                const li = document.createElement('li');
-                let prefix = index < 3 ? emojis[index] : "⭐";
-                li.textContent = `${prefix} ${entry.name} - ${entry.score}`;
-                list.appendChild(li);
-            });
-        })
-        .catch(err => console.error("Leaderboard fetch error:", err));
+function updateLeaderboard(){
+  const url = `http://dreamlo.com/lb/${DREAMLO_KEY_READ}/json`;
+  fetch(ALLORIGINS + encodeURIComponent(url))
+    .then(resp => resp.json())
+    .then(data=>{
+      let entries = [];
+      try{
+        const json = JSON.parse(data.contents);
+        if(json.dreamlo && json.dreamlo.leaderboard && json.dreamlo.leaderboard.entry){
+          entries = json.dreamlo.leaderboard.entry;
+          entries.sort((a,b)=>parseInt(b.score)-parseInt(a.score));
+          entries = entries.slice(0,10);
+        }
+      }catch(e){console.error("Error parsing Dreamlo JSON:",e);}
+      const list = document.getElementById("leaderboardList");
+      list.innerHTML = "";
+      entries.forEach(entry=>{
+        const li = document.createElement("li");
+        li.textContent = `${entry.name}: ${entry.score}`;
+        list.appendChild(li);
+      });
+    })
+    .catch(err=>console.error("Error reading leaderboard:",err));
 }
 
 // --- Hook leaderboard into Next Round ---
