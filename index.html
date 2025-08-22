@@ -293,12 +293,36 @@ leaderboardDiv.style = "position:absolute; top:10px; right:10px; color:white; ba
 leaderboardDiv.innerHTML = `<h3 style="margin-bottom:5px;">Top 10</h3><ol id="leaderboardList" style="padding-left:20px;"></ol>`;
 document.body.appendChild(leaderboardDiv);
 
-// RECORDS button (over logo)
+// RECORDS button (centered over logo)
 const recordsBtn = document.createElement('button');
 recordsBtn.id = 'recordsBtn';
 recordsBtn.textContent = 'RECORDS';
-recordsBtn.style = "position:absolute; top:120px; right:232px; padding:8px 15px; font-weight:bold; border-radius:8px; border:none; cursor:pointer; z-index:1001;";
+recordsBtn.style = `
+  position: absolute;
+  padding: 8px 15px;
+  font-weight: bold;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  z-index: 1001;
+`;
+
+// Append first
 document.getElementById('gameScreen').appendChild(recordsBtn);
+
+// Position it dynamically above the Billie Raid logo
+function positionRecordsBtn() {
+  const logo = document.getElementById('gameTitle');
+  const rect = logo.getBoundingClientRect();
+  const parentRect = logo.parentElement.getBoundingClientRect();
+  // Place button centered above logo with small gap
+  recordsBtn.style.left = rect.left + rect.width/2 - recordsBtn.offsetWidth/2 + 'px';
+  recordsBtn.style.top = rect.top - parentRect.top - recordsBtn.offsetHeight - 15 + 'px'; // 5px gap
+}
+
+// Call initially and on window resize
+positionRecordsBtn();
+window.addEventListener('resize', positionRecordsBtn);
 
 // Toggle leaderboard on button click
 recordsBtn.addEventListener('click', () => {
