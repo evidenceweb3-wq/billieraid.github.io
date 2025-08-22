@@ -286,12 +286,29 @@ const DREAMLO_KEY_WRITE = "YjalU2-3Yk6RIoRqxNh4JQ3Kq0lO0E_US39f8jV27Y-A";
 const DREAMLO_KEY_READ  = "68a7a4f48f40bb12e0701b8c";
 const ALLORIGINS = "https://api.allorigins.win/get?url=";
 
-// Leaderboard HTML
+// Leaderboard HTML (hidden by default)
 const leaderboardDiv = document.createElement('div');
 leaderboardDiv.id = 'leaderboard';
-leaderboardDiv.style = "position:absolute; top:10px; right:10px; color:white; background:rgba(0,0,0,0.4); padding:10px; border-radius:8px; z-index:1000;";
+leaderboardDiv.style = "position:absolute; top:10px; right:10px; color:white; background:rgba(0,0,0,0.4); padding:10px; border-radius:8px; z-index:1000; display:none;";
 leaderboardDiv.innerHTML = `<h3 style="margin-bottom:5px;">Top 10</h3><ol id="leaderboardList" style="padding-left:20px;"></ol>`;
 document.body.appendChild(leaderboardDiv);
+
+// RECORDS button (over logo)
+const recordsBtn = document.createElement('button');
+recordsBtn.id = 'recordsBtn';
+recordsBtn.textContent = 'RECORDS';
+recordsBtn.style = "position:absolute; top:120px; right:232px; padding:8px 15px; font-weight:bold; border-radius:8px; border:none; cursor:pointer; z-index:1001;";
+document.getElementById('gameScreen').appendChild(recordsBtn);
+
+// Toggle leaderboard on button click
+recordsBtn.addEventListener('click', () => {
+    if(leaderboardDiv.style.display === 'none'){
+        leaderboardDiv.style.display = 'block';
+        updateLeaderboard(); // refresh when showing
+    } else {
+        leaderboardDiv.style.display = 'none';
+    }
+});
 
 // Add score to Dreamlo
 function addScoreToDreamlo(name, score){
@@ -328,39 +345,28 @@ function updateLeaderboard(){
     .catch(err=>console.error("Error reading leaderboard:",err));
 }
 
-// Call this at the end of each round
-function onRoundEnd(roundNumber){
-  if(roundNumber === totalRounds){ // write only after last round
-    const playerName = prompt("Enter your name for the leaderboard:", "Player");
-    if(playerName) addScoreToDreamlo(playerName, totalScore);
-  }
-  updateLeaderboard(); // always refresh leaderboard
-}
-
-// Hook leaderboard into your existing Next Round button
+// --- Hook leaderboard into Next Round ---
 restartBtn.addEventListener('click', () => {
     if(round < totalRounds){
-        round++;             // advance round
+        round++; 
         initGameGrid(); 
         showRoundPopup();
     } else {
-        // Last round completed: ask for name and submit score
+        // Last round completed
+        // Prompt for name only at round 5
         const playerName = prompt("Enter your name for the leaderboard:", "Player");
         if(playerName) addScoreToDreamlo(playerName, totalScore);
 
-        // Reset game
-        round = 1;
-        totalScore = 0;
-        tracker.forEach(c => c.className = 'tracker-circle');
-        initGameGrid();
+        round = 1; 
+        totalScore = 0; 
+        tracker.forEach(c => c.className = 'tracker-circle'); 
+        initGameGrid(); 
         showRoundPopup();
     }
-
-    updateHUD();          // update score display
-    updateLeaderboard();  // refresh leaderboard list
+    updateHUD();
 });
 
-// Auto-refresh every 15 seconds
+// Auto-refresh leaderboard every 15 seconds (works even if hidden)
 setInterval(updateLeaderboard,15000);
 updateLeaderboard();  
 </script>
