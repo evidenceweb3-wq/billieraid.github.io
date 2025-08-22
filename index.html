@@ -293,46 +293,47 @@ leaderboardDiv.style = "position:absolute; top:10px; right:10px; color:white; ba
 leaderboardDiv.innerHTML = `<h3 style="margin-bottom:5px;">Top 10</h3><ol id="leaderboardList" style="padding-left:20px;"></ol>`;
 document.body.appendChild(leaderboardDiv);
 
-// RECORDS button (centered over logo)
+// RECORDS button (over logo, anchored to gameScreen)
 const recordsBtn = document.createElement('button');
 recordsBtn.id = 'recordsBtn';
 recordsBtn.textContent = 'RECORDS';
 recordsBtn.style = `
-  position: absolute;
+  position: absolute;       /* relative to gameScreen */
+  top: 90px;                /* adjust height above logo */
+  left: 50%;                /* centered horizontally */
+  transform: translateX(-50%);
   padding: 8px 15px;
   font-weight: bold;
   border-radius: 8px;
   border: none;
   cursor: pointer;
   z-index: 1001;
+  display: none;            /* hidden by default */
 `;
-
-// Append first
 document.getElementById('gameScreen').appendChild(recordsBtn);
 
-// Position it dynamically above the Billie Raid logo
-function positionRecordsBtn() {
-  const logo = document.getElementById('gameTitle');
-  const rect = logo.getBoundingClientRect();
-  const parentRect = logo.parentElement.getBoundingClientRect();
-  // Place button centered above logo with small gap
-  recordsBtn.style.left = rect.left + rect.width/2 - recordsBtn.offsetWidth/2 + 'px';
-  recordsBtn.style.top = rect.top - parentRect.top - recordsBtn.offsetHeight - 15 + 'px'; // 5px gap
+// Show button only on gameScreen
+function showRecordsBtn(show){
+  recordsBtn.style.display = show ? 'block' : 'none';
 }
-
-// Call initially and on window resize
-positionRecordsBtn();
-window.addEventListener('resize', positionRecordsBtn);
 
 // Toggle leaderboard on button click
 recordsBtn.addEventListener('click', () => {
-    if(leaderboardDiv.style.display === 'none'){
-        leaderboardDiv.style.display = 'block';
-        updateLeaderboard(); // refresh when showing
-    } else {
-        leaderboardDiv.style.display = 'none';
-    }
+  leaderboardDiv.style.display =
+    leaderboardDiv.style.display === 'none' ? 'block' : 'none';
+  if (leaderboardDiv.style.display === 'block') updateLeaderboard();
 });
+
+// When switching to gameScreen, show the button
+document.getElementById('startGameBtn').addEventListener('click', () => {
+  instructionsScreen.classList.remove('active');
+  gameScreen.classList.add('active');
+  initGameGrid();
+  updateHUD();
+  showRoundPopup();
+  showRecordsBtn(true);
+});
+
 
 // Add score to Dreamlo
 function addScoreToDreamlo(name, score){
