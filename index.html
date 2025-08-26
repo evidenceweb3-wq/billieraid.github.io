@@ -295,7 +295,7 @@ const ALLORIGINS = "https://api.allorigins.win/get?url=";
 const leaderboardDiv = document.createElement('div');
 leaderboardDiv.id = 'leaderboard';
 leaderboardDiv.style = "position:absolute; top:10px; right:10px; color:white; background:rgba(0,0,0,0.4); padding:10px; border-radius:8px; z-index:1000; display:none;";
-leaderboardDiv.innerHTML = `<h3 style="margin-bottom:5px;">Top 10</h3><ol id="leaderboardList" style="padding-left:20px;"></ol>`;
+leaderboardDiv.innerHTML = `<h3 style="margin-bottom:5px;">Top 20</h3><ol id="leaderboardList" style="padding-left:20px;"></ol>`;
 document.body.appendChild(leaderboardDiv);
 
 // RECORDS button (over logo, anchored to gameScreen)
@@ -419,4 +419,5 @@ updateLeaderboard();
 </script>
 </body>
 </html>
+
 
