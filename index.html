@@ -148,6 +148,11 @@ html,body{height:100%;font-family:Arial,sans-serif;overflow:hidden;background: l
     <div class="tracker-circle" id="tracker3"></div>
     <div class="tracker-circle" id="tracker4"></div>
     <div class="tracker-circle" id="tracker5"></div>
+    <div class="tracker-circle" id="tracker6"></div>
+    <div class="tracker-circle" id="tracker7"></div>
+    <div class="tracker-circle" id="tracker8"></div>
+    <div class="tracker-circle" id="tracker9"></div>
+    <div class="tracker-circle" id="tracker10"></div>
   </div>
   <div id="message"></div>
   <button id="restartBtn">Next Round</button>
@@ -242,7 +247,7 @@ const roundPopup=document.getElementById('roundPopup');
 const tracker=document.querySelectorAll('.tracker-circle');
 
 // --- Rounds & Score ---
-let round=1,totalRounds=5,totalScore=0,recordScore=localStorage.getItem('recordScore')?parseInt(localStorage.getItem('recordScore')):0;
+let round=1,totalRounds=10,totalScore=0,recordScore=localStorage.getItem('recordScore')?parseInt(localStorage.getItem('recordScore')):0;
 const scoreHUD=document.getElementById('scoreHUD');
 function updateHUD(){scoreHUD.textContent=`Round: ${round}/${totalRounds} | Total: ${totalScore} | Record: ${recordScore}`;}
 
@@ -296,7 +301,7 @@ document.body.appendChild(leaderboardDiv);
 // RECORDS button (over logo, anchored to gameScreen)
 const recordsBtn = document.createElement('button');
 recordsBtn.id = 'recordsBtn';
-recordsBtn.textContent = 'LEADERBOARD';
+recordsBtn.textContent = 'RECORDS';
 recordsBtn.style = `
   position: absolute;       /* relative to gameScreen */
   top: 90px;                /* adjust height above logo */
@@ -344,7 +349,7 @@ function addScoreToDreamlo(name, score){
     .catch(err => console.error("Error adding score:", err));
 }
 
-// Read top 10 from Dreamlo
+// --- Update Leaderboard ---
 function updateLeaderboard(){
   const url = `http://dreamlo.com/lb/${DREAMLO_KEY_READ}/json`;
   fetch(ALLORIGINS + encodeURIComponent(url))
@@ -354,21 +359,38 @@ function updateLeaderboard(){
       try{
         const json = JSON.parse(data.contents);
         if(json.dreamlo && json.dreamlo.leaderboard && json.dreamlo.leaderboard.entry){
-          entries = json.dreamlo.leaderboard.entry;
+          let raw = json.dreamlo.leaderboard.entry;
+          // ✅ Always ensure it’s an array
+          entries = Array.isArray(raw) ? raw : [raw];
+          // sort by score (high → low)
           entries.sort((a,b)=>parseInt(b.score)-parseInt(a.score));
-          entries = entries.slice(0,10);
+          // keep top 20
+          entries = entries.slice(0,20);
         }
-      }catch(e){console.error("Error parsing Dreamlo JSON:",e);}
+      }catch(e){
+        console.error("Error parsing Dreamlo JSON:",e);
+      }
+      
       const list = document.getElementById("leaderboardList");
       list.innerHTML = "";
-      entries.forEach(entry=>{
+      if(entries.length===0){
+        list.innerHTML = "<li>No scores yet</li>";
+        return;
+      }
+      entries.forEach((entry,index)=>{
+        let medal = "🔹"; // default for 4–20
+        if(index===0) medal = "🥇";
+        else if(index===1) medal = "🥈";
+        else if(index===2) medal = "🥉";
+        
         const li = document.createElement("li");
-        li.textContent = `${entry.name}: ${entry.score}`;
+        li.textContent = `${medal} ${entry.name}: ${entry.score}`;
         list.appendChild(li);
       });
     })
     .catch(err=>console.error("Error reading leaderboard:",err));
 }
+
 
 // --- Hook leaderboard into Next Round ---
 restartBtn.addEventListener('click', () => {
